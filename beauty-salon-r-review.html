@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>beauty salon R｜クチコミ作成</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --rose: #c9747a;
+  --rose-light: #f0d0d2;
+  --rose-pale: #fdf5f5;
+  --dark: #1a1218;
+  --dark2: #2a1e22;
+  --cream: #fdf9f7;
+  --warm: #f7f0ee;
+  --gray: #7a6a6e;
+  --border: rgba(201,116,122,0.22);
+  --white: #ffffff;
+  --negative: #c0392b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--cream);
+  color: var(--dark);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-size: 16px;
+}
+.header {
+  background: linear-gradient(135deg, var(--dark) 0%, var(--dark2) 100%);
+  padding: 36px 24px 28px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% -20%, rgba(201,116,122,0.25) 0%, transparent 65%);
+  pointer-events: none;
+}
+.header-eyebrow {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: var(--rose-light);
+  display: block;
+  margin-bottom: 10px;
+  position: relative;
+}
+.header h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  font-size: 26px;
+  color: var(--white);
+  letter-spacing: 3px;
+  position: relative;
+}
+.header-line {
+  width: 48px; height: 1px;
+  background: linear-gradient(to right, transparent, var(--rose), transparent);
+  margin: 14px auto;
+  position: relative;
+}
+.header-sub { font-size: 11px; color: var(--rose-light); letter-spacing: 2px; position: relative; }
+.progress-bar-wrap {
+  background: var(--white);
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+.progress-meta {
+  display: flex; justify-content: space-between;
+  font-size: 10px; letter-spacing: 1.5px; color: var(--gray); margin-bottom: 7px;
+}
+.progress-track { height: 2px; background: var(--rose-light); border-radius: 2px; overflow: hidden; }
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, var(--rose), #e8a0a5);
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.container { max-width: 540px; margin: 0 auto; padding-bottom: 60px; }
+.step { display: none; }
+.step.active { display: block; animation: stepIn 0.35s ease; }
+@keyframes stepIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.welcome-wrap {
+  margin: 28px 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 40px 28px 36px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(26,18,24,0.07);
+}
+.welcome-icon { font-size: 44px; display: block; margin-bottom: 20px; }
+.welcome-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 400; letter-spacing: 2px;
+  color: var(--dark); margin-bottom: 16px;
+}
+.welcome-greeting { font-size: 17px; color: var(--dark); line-height: 2; letter-spacing: 0.3px; margin-bottom: 18px; font-weight: 400; }
+.welcome-desc { font-size: 14px; color: var(--gray); line-height: 2.1; letter-spacing: 0.3px; margin-bottom: 24px; }
+.gift-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #1e6b45, #00a862);
+  color: white; padding: 13px 22px; border-radius: 40px;
+  font-size: 12px; letter-spacing: 0.5px;
+  box-shadow: 0 4px 16px rgba(0,100,60,0.3);
+}
+.q-card {
+  margin: 24px 16px 0; background: var(--white);
+  border: 1px solid var(--border); border-radius: 4px;
+  overflow: hidden; box-shadow: 0 4px 20px rgba(26,18,24,0.06);
+}
+.q-head {
+  background: linear-gradient(135deg, var(--dark) 0%, var(--dark2) 100%);
+  padding: 22px 24px 18px; position: relative;
+}
+.q-num {
+  font-family: 'Playfair Display', serif; font-style: italic;
+  font-size: 11px; color: var(--rose-light); letter-spacing: 4px;
+  display: block; margin-bottom: 7px;
+}
+.q-title { font-size: 17px; font-weight: 400; color: var(--white); line-height: 1.75; letter-spacing: 0.5px; }
+.q-note { margin-top: 6px; font-size: 12px; color: rgba(240,208,210,0.75); letter-spacing: 0.5px; }
+.q-body { padding: 20px 20px 24px; }
+.opt-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.opt-item label {
+  display: flex; align-items: flex-start; gap: 13px;
+  padding: 13px 15px; border: 1px solid rgba(201,116,122,0.25);
+  border-radius: 3px; cursor: pointer; transition: all 0.18s ease;
+  font-size: 15px; line-height: 1.7; color: var(--dark); background: var(--white);
+  -webkit-tap-highlight-color: transparent;
+}
+.opt-item label:hover { border-color: var(--rose); background: var(--rose-pale); }
+.opt-item input[type="checkbox"] { display: none; }
+.opt-item input:checked + label { border-color: var(--rose); background: var(--rose-pale); }
+.opt-item input:checked + label .cb { background: var(--rose); border-color: var(--rose); }
+.opt-item input:checked + label .cb::after { opacity: 1; }
+.cb {
+  width: 18px; height: 18px; border: 1.5px solid rgba(201,116,122,0.4);
+  border-radius: 2px; flex-shrink: 0; margin-top: 1px;
+  transition: all 0.18s; position: relative;
+}
+.cb::after {
+  content: ''; position: absolute; top: 2px; left: 5px;
+  width: 5px; height: 9px; border-right: 2px solid white; border-bottom: 2px solid white;
+  transform: rotate(45deg); opacity: 0; transition: opacity 0.15s;
+}
+/* ネガティブ選択肢 */
+.opt-item.negative label { border-color: rgba(192,57,43,0.25); color: var(--negative); }
+.opt-item.negative label:hover { border-color: rgba(192,57,43,0.5); background: rgba(192,57,43,0.05); }
+.opt-item.negative input:checked + label { border-color: var(--negative); background: rgba(192,57,43,0.07); color: var(--negative); }
+.opt-item.negative input:checked + label .cb { background: var(--negative); border-color: var(--negative); }
+
+.btn-row { display: flex; gap: 10px; margin: 16px 16px 0; }
+.btn {
+  flex: 1; padding: 16px 12px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 14px; letter-spacing: 2px; border: none; border-radius: 3px;
+  cursor: pointer; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent;
+}
+.btn-back { background: var(--white); color: var(--gray); border: 1px solid var(--border); flex: 0.6; }
+.btn-back:hover { border-color: var(--rose); color: var(--rose); }
+.btn-next { background: var(--dark); color: var(--rose-light); }
+.btn-next:hover { background: var(--dark2); }
+.btn-full {
+  display: block; width: calc(100% - 32px); margin: 16px 16px 0;
+  padding: 18px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px; letter-spacing: 3px; border: none; border-radius: 3px;
+  cursor: pointer; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent;
+}
+.btn-generate {
+  background: linear-gradient(135deg, var(--rose) 0%, #e08a90 100%);
+  color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(201,116,122,0.4);
+}
+.btn-generate:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(201,116,122,0.5); }
+.text-input-wrap { padding: 4px 0; }
+.text-input {
+  width: 100%; padding: 16px 18px; border: 1px solid rgba(201,116,122,0.3);
+  border-radius: 3px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px;
+  color: var(--dark); background: var(--white); outline: none; transition: border-color 0.2s; line-height: 1.6;
+}
+.text-input:focus { border-color: var(--rose); background: var(--rose-pale); }
+.text-input::placeholder { color: rgba(122,106,110,0.5); font-size: 12px; }
+.input-hint {
+  margin-top: 10px; font-size: 11.5px; color: var(--gray); line-height: 2;
+  letter-spacing: 0.3px; padding: 12px 16px; background: var(--warm);
+  border-radius: 3px; border-left: 2px solid var(--rose-light);
+}
+.select-group-label { font-size: 14px; color: var(--gray); letter-spacing: 1px; margin-bottom: 10px; display: block; }
+.gender-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+.age-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.select-btn {
+  padding: 16px 8px; border: 1.5px solid rgba(201,116,122,0.28); border-radius: 3px;
+  background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 15px;
+  color: var(--dark); cursor: pointer; transition: all 0.18s ease; text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.select-btn:hover { border-color: var(--rose); background: var(--rose-pale); }
+.select-btn.selected { border-color: var(--rose); background: var(--rose); color: var(--white); }
+.free-textarea {
+  width: 100%; padding: 16px 18px; border: 1px solid rgba(201,116,122,0.3); border-radius: 3px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 15px; color: var(--dark);
+  background: var(--white); outline: none; transition: border-color 0.2s; line-height: 1.8;
+  resize: vertical; min-height: 100px;
+}
+.free-textarea:focus { border-color: var(--rose); background: var(--rose-pale); }
+.free-textarea::placeholder { color: rgba(122,106,110,0.45); font-size: 13px; }
+/* スコア */
+.score-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+.score-btn {
+  aspect-ratio: 1; border: 1.5px solid rgba(201,116,122,0.28); border-radius: 4px;
+  background: var(--white); font-family: 'Playfair Display', serif; font-size: 22px;
+  font-weight: 400; color: var(--dark); cursor: pointer; transition: all 0.18s ease;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.score-btn:hover { border-color: var(--rose); background: var(--rose-pale); }
+.score-btn.selected { border-color: var(--rose); background: var(--rose); color: white; }
+.score-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--gray); letter-spacing: 0.5px; padding: 0 2px; }
+/* ローディング */
+.loading-wrap {
+  margin: 28px 16px; background: var(--white); border: 1px solid var(--border);
+  border-radius: 4px; padding: 60px 28px; text-align: center;
+  box-shadow: 0 4px 20px rgba(26,18,24,0.06);
+}
+.loading-ring {
+  width: 48px; height: 48px; border: 2px solid var(--rose-light);
+  border-top-color: var(--rose); border-radius: 50%; margin: 0 auto 24px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 18px; color: var(--gray); letter-spacing: 2px; }
+.loading-sub { margin-top: 8px; font-size: 11px; color: rgba(122,106,110,0.6); letter-spacing: 1px; }
+/* 結果 */
+.result-wrap {
+  margin: 24px 16px 0; background: var(--white); border: 1px solid var(--border);
+  border-radius: 4px; overflow: hidden; box-shadow: 0 4px 20px rgba(26,18,24,0.06);
+}
+.result-head {
+  background: linear-gradient(135deg, var(--dark) 0%, var(--dark2) 100%);
+  padding: 20px 24px; display: flex; align-items: center; gap: 14px;
+}
+.result-head-icon { font-size: 22px; }
+.result-head-text { font-family: 'Playfair Display', serif; font-size: 17px; color: var(--white); letter-spacing: 2px; }
+.result-head-sub { font-size: 10px; color: var(--rose-light); letter-spacing: 1px; margin-top: 3px; }
+.result-body { padding: 24px; }
+.review-text {
+  font-size: 15px; line-height: 2.2; color: var(--dark); letter-spacing: 0.3px;
+  white-space: pre-wrap; background: var(--warm); padding: 20px; border-radius: 3px;
+  border-left: 3px solid var(--rose);
+}
+.disclaimer-note {
+  margin: 10px 0 0; padding: 12px 16px; background: rgba(201,116,122,0.07);
+  border-radius: 3px; border-left: 2px solid var(--rose-light);
+  font-size: 13px; color: var(--gray); line-height: 1.9; letter-spacing: 0.3px;
+}
+.copy-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; margin-top: 16px; padding: 15px;
+  background: var(--rose-pale); border: 1.5px solid var(--rose); border-radius: 3px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 14px; letter-spacing: 2px;
+  color: var(--dark); cursor: pointer; transition: all 0.2s;
+}
+.copy-btn:hover { background: var(--rose-light); }
+.copy-btn.copied { background: #eaf5f0; border-color: #4caf50; color: #2e7d32; }
+.action-btn-row { display: flex; gap: 8px; margin-top: 14px; }
+.action-btn {
+  flex: 1; padding: 14px 8px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px; letter-spacing: 1.5px; border-radius: 3px; cursor: pointer; transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-remake { background: var(--white); color: var(--dark); border: 1px solid var(--border); }
+.btn-remake:hover { border-color: var(--rose); color: var(--rose); }
+.btn-restart { background: var(--white); color: var(--gray); border: 1px solid var(--border); }
+.btn-restart:hover { border-color: rgba(201,116,122,0.4); }
+.step-guide {
+  margin: 16px 16px 0; padding: 18px 20px; background: var(--warm);
+  border: 1px solid var(--border); border-radius: 3px;
+}
+.step-guide-title { font-size: 10px; letter-spacing: 2.5px; color: var(--rose); margin-bottom: 12px; }
+.step-guide ol { padding-left: 18px; font-size: 14px; color: var(--gray); line-height: 2.1; letter-spacing: 0.3px; }
+.btn-google {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin: 12px 16px 0; padding: 18px; background: var(--dark);
+  color: var(--rose-light); text-decoration: none; border-radius: 3px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 13px; letter-spacing: 2px; transition: background 0.2s;
+}
+.btn-google:hover { background: var(--dark2); }
+.footer-note { margin: 20px 16px 0; text-align: center; font-size: 12px; color: var(--gray); letter-spacing: 1px; }
+.paste-test-wrap {
+  margin: 16px 16px 0; background: var(--white); border: 1px solid var(--border);
+  border-radius: 4px; overflow: hidden; box-shadow: 0 2px 12px rgba(26,18,24,0.05);
+}
+.paste-test-label {
+  display: flex; align-items: center; gap: 8px; padding: 13px 18px;
+  background: var(--warm); border-bottom: 1px solid var(--border);
+  font-size: 14px; color: var(--dark); letter-spacing: 1px;
+}
+.paste-test-area {
+  width: 100%; padding: 16px 18px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 14px; color: var(--dark); background: var(--white); border: none;
+  outline: none; resize: none; line-height: 1.9; letter-spacing: 0.3px; display: block;
+}
+.paste-test-area::placeholder { color: rgba(122,106,110,0.45); font-size: 13px; line-height: 1.8; }
+.paste-test-status {
+  padding: 0 18px; font-size: 13px; min-height: 24px;
+  display: flex; align-items: center; gap: 6px; color: #2e7d32; letter-spacing: 0.5px;
+}
+.paste-clear-btn {
+  display: block; width: calc(100% - 36px); margin: 0 18px 16px; padding: 12px;
+  background: transparent; border: 1px solid var(--border); border-radius: 3px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 12px; letter-spacing: 1.5px;
+  color: var(--gray); cursor: pointer; transition: all 0.2s;
+}
+.paste-clear-btn:hover { border-color: var(--rose); color: var(--rose); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-eyebrow">beauty salon R</span>
+  <h1>クチコミ作成</h1>
+  <div class="header-line"></div>
+  <p class="header-sub">あなたのご感想をお聞かせください</p>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-meta">
+    <span id="step-label">STEP 0 / 9</span>
+    <span id="step-pct">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- STEP 0: WELCOME -->
+  <div class="step active" id="step-0">
+    <div class="welcome-wrap">
+      <span class="welcome-icon">✨</span>
+      <p class="welcome-greeting">この度はbeauty salon Rを<br>ご利用いただき、ありがとうございます。</p>
+      <p class="welcome-desc">
+        いくつかの質問にお答えいただくと、<br>
+        その回答をもとにクチコミ文章を作成いたします。<br>
+        内容をご確認のうえ、よろしければ<br>
+        GoogleMAPのクチコミへご投稿ください。<br>
+        所要時間は約3分です。
+      </p>
+    </div>
+    <button class="btn-full btn-generate" onclick="goTo(1)">はじめる →</button>
+  </div>
+
+  <!-- STEP 1: 性別・年齢 -->
+  <div class="step" id="step-1">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num">Question 01</span>
+        <div class="q-title">性別と年代を教えてください</div>
+        <div class="q-note">※ それぞれ1つ選んでください</div>
+      </div>
+      <div class="q-body">
+        <span class="select-group-label">性別</span>
+        <div class="gender-grid">
+          <button class="select-btn" id="g-male" onclick="selectGender('男性')">男性</button>
+          <button class="select-btn" id="g-female" onclick="selectGender('女性')">女性</button>
+          <button class="select-btn" id="g-none" onclick="selectGender('未回答')">未回答</button>
+        </div>
+        <span class="select-group-label" style="margin-top:10px">年代</span>
+        <div class="age-grid">
+          <button class="select-btn" id="a-teen" onclick="selectAge('10代以下')">10代以下</button>
+          <button class="select-btn" id="a-20" onclick="selectAge('20代')">20代</button>
+          <button class="select-btn" id="a-30" onclick="selectAge('30代')">30代</button>
+          <button class="select-btn" id="a-40" onclick="selectAge('40代')">40代</button>
+          <button class="select-btn" id="a-50" onclick="selectAge('50代')">50代</button>
+          <button class="select-btn" id="a-60" onclick="selectAge('60代')">60代</button>
+          <button class="select-btn" id="a-70" onclick="selectAge('70代以上')">70代以上</button>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo(0)">← 戻る</button>
+      <button class="btn btn-next" onclick="next1ga()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Q① 利用メニュー -->
+  <div class="step" id="step-2">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num">Question 02</span>
+        <div class="q-title">今回beauty salon Rで<br>ご利用いただいたメニューは？</div>
+        <div class="q-note">※ あてはまるものをすべて選んでください</div>
+      </div>
+      <div class="q-body">
+        <ul class="opt-list">
+          <li class="opt-item"><input type="checkbox" id="m1" name="menu" value="facial"><label for="m1"><span class="cb"></span>フェイシャルエステ・韓国肌管理</label></li>
+          <li class="opt-item"><input type="checkbox" id="m2" name="menu" value="depilation"><label for="m2"><span class="cb"></span>脱毛サロン（全身・部分脱毛）</label></li>
+          <li class="opt-item"><input type="checkbox" id="m3" name="menu" value="liftup"><label for="m3"><span class="cb"></span>リフトアップ・小顔ケア</label></li>
+          <li class="opt-item"><input type="checkbox" id="m4" name="menu" value="pores"><label for="m4"><span class="cb"></span>毛穴ケア・毛穴洗浄</label></li>
+          <li class="opt-item"><input type="checkbox" id="m5" name="menu" value="acne"><label for="m5"><span class="cb"></span>ニキビケア・肌荒れ改善</label></li>
+          <li class="opt-item"><input type="checkbox" id="m6" name="menu" value="sensitive"><label for="m6"><span class="cb"></span>敏感肌ケア・肌質改善</label></li>
+          <li class="opt-item"><input type="checkbox" id="m7" name="menu" value="trial"><label for="m7"><span class="cb"></span>初回体験・トライアルコース</label></li>
+        </ul>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo(1)">← 戻る</button>
+      <button class="btn btn-next" onclick="next2()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Q② 良かった点 -->
+  <div class="step" id="step-3">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num">Question 03</span>
+        <div class="q-title">サービスの良かった点を<br>教えてください</div>
+        <div class="q-note">※ あてはまるものをすべて選んでください（赤字はネガティブな選択肢です）</div>
+      </div>
+      <div class="q-body">
+        <ul class="opt-list">
+          <li class="opt-item"><input type="checkbox" id="g1" name="good" value="スタッフが肌の悩みを丁寧にヒアリングしてくれた"><label for="g1"><span class="cb"></span>スタッフが肌の悩みを丁寧にヒアリングしてくれた</label></li>
+          <li class="opt-item"><input type="checkbox" id="g2" name="good" value="韓国肌管理の技術が本格的で満足した"><label for="g2"><span class="cb"></span>韓国肌管理の技術が本格的で満足した</label></li>
+          <li class="opt-item"><input type="checkbox" id="g3" name="good" value="施術後に肌が明らかにトーンアップした"><label for="g3"><span class="cb"></span>施術後に肌が明らかにトーンアップした</label></li>
+          <li class="opt-item"><input type="checkbox" id="g4" name="good" value="毛穴の汚れがしっかりケアされスッキリした"><label for="g4"><span class="cb"></span>毛穴の汚れがしっかりケアされスッキリした</label></li>
+          <li class="opt-item"><input type="checkbox" id="g5" name="good" value="ニキビや肌荒れが改善されるのを実感した"><label for="g5"><span class="cb"></span>ニキビや肌荒れが改善されるのを実感した</label></li>
+          <li class="opt-item"><input type="checkbox" id="g6" name="good" value="敏感肌でも安心して受けられた"><label for="g6"><span class="cb"></span>敏感肌でも安心して受けられた</label></li>
+          <li class="opt-item"><input type="checkbox" id="g7" name="good" value="リフトアップ効果を感じた"><label for="g7"><span class="cb"></span>リフトアップ効果を感じた</label></li>
+          <li class="opt-item"><input type="checkbox" id="g8" name="good" value="完全予約制でプライベートな空間でゆっくりできた"><label for="g8"><span class="cb"></span>完全予約制でプライベートな空間でゆっくりできた</label></li>
+          <li class="opt-item"><input type="checkbox" id="g9" name="good" value="アフターケアのアドバイスが参考になった"><label for="g9"><span class="cb"></span>アフターケアのアドバイスが参考になった</label></li>
+          <li class="opt-item negative"><input type="checkbox" id="g10" name="good" value="▼ 施術時間が短く感じた"><label for="g10"><span class="cb"></span>施術時間が短く感じた</label></li>
+          <li class="opt-item negative"><input type="checkbox" id="g11" name="good" value="▼ 予約が取りにくかった"><label for="g11"><span class="cb"></span>予約が取りにくかった</label></li>
+        </ul>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo(2)">← 戻る</button>
+      <button class="btn btn-next" onclick="next3()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Q③ おすすめしたい方 -->
+  <div class="step" id="step-4">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num">Question 04</span>
+        <div class="q-title">このサロンはどのような方に<br>おすすめしますか？</div>
+        <div class="q-note">※ あてはまるものをすべて選んでください（赤字はネガティブな選択肢です）</div>
+      </div>
+      <div class="q-body">
+        <ul class="opt-list">
+          <li class="opt-item"><input type="checkbox" id="r1" name="rec" value="韓国スキンケアや韓国肌管理に興味がある方"><label for="r1"><span class="cb"></span>韓国スキンケアや韓国肌管理に興味がある方</label></li>
+          <li class="opt-item"><input type="checkbox" id="r2" name="rec" value="敏感肌でエステに通うのを躊躇っていた方"><label for="r2"><span class="cb"></span>敏感肌でエステに通うのを躊躇っていた方</label></li>
+          <li class="opt-item"><input type="checkbox" id="r3" name="rec" value="毛穴の開きや黒ずみが気になっている方"><label for="r3"><span class="cb"></span>毛穴の開きや黒ずみが気になっている方</label></li>
+          <li class="opt-item"><input type="checkbox" id="r4" name="rec" value="ニキビ・肌荒れを根本から改善したい方"><label for="r4"><span class="cb"></span>ニキビ・肌荒れを根本から改善したい方</label></li>
+          <li class="opt-item"><input type="checkbox" id="r5" name="rec" value="リフトアップや小顔効果を求めている方"><label for="r5"><span class="cb"></span>リフトアップや小顔効果を求めている方</label></li>
+          <li class="opt-item"><input type="checkbox" id="r6" name="rec" value="プライベートな環境でゆっくり施術を受けたい方"><label for="r6"><span class="cb"></span>プライベートな環境でゆっくり施術を受けたい方</label></li>
+          <li class="opt-item"><input type="checkbox" id="r7" name="rec" value="本格的な肌改善・エステサロンを探している方"><label for="r7"><span class="cb"></span>本格的な肌改善・エステサロンを探している方</label></li>
+          <li class="opt-item negative"><input type="checkbox" id="r8" name="rec" value="▼ 気軽にふらっと立ち寄りたい方には向かないかもしれない"><label for="r8"><span class="cb"></span>気軽にふらっと立ち寄りたい方には向かないかもしれない</label></li>
+        </ul>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo(3)">← 戻る</button>
+      <button class="btn btn-next" onclick="next4()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Q④ 施術前後の変化 -->
+  <div class="step" id="step-5">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num">Question 05</span>
+        <div class="q-title">施術を受ける前と後で<br>どのような変化がありましたか？</div>
+        <div class="q-note">※ あてはまるものをすべて選んでください（赤字はネガティブな選択肢です）</div>
+      </div>
+      <div class="q-body">
+        <ul class="opt-list">
+          <li class="opt-item"><input type="checkbox" id="c1" name="chg" value="肌がもちもちになり、ハリを感じた"><label for="c1"><span class="cb"></span>肌がもちもちになり、ハリを感じた</label></li>
+          <li class="opt-item"><input type="checkbox" id="c2" name="chg" value="くすみが取れて顔色が明るくなった"><label for="c2"><span class="cb"></span>くすみが取れて顔色が明るくなった</label></li>
+          <li class="opt-item"><input type="checkbox" id="c3" name="chg" value="毛穴が目立たなくなった"><label for="c3"><span class="cb"></span>毛穴が目立たなくなった</label></li>
+          <li class="opt-item"><input type="checkbox" id="c4" name="chg" value="ニキビや肌荒れが落ち着いてきた"><label for="c4"><span class="cb"></span>ニキビや肌荒れが落ち着いてきた</label></li>
+          <li class="opt-item"><input type="checkbox" id="c5" name="chg" value="フェイスラインがすっきりしてリフトアップを実感した"><label for="c5"><span class="cb"></span>フェイスラインがすっきりしてリフトアップを実感した</label></li>
+          <li class="opt-item"><input type="checkbox" id="c6" name="chg" value="スキンケアへの意識が高まった"><label for="c6"><span class="cb"></span>スキンケアへの意識が高まった</label></li>
+          <li class="opt-item"><input type="checkbox" id="c7" name="chg" value="脱毛が進んでお手入れが楽になってきた"><label for="c7"><span class="cb"></span>脱毛が進んでお手入れが楽になってきた</label></li>
+          <li class="opt-item negative"><input type="checkbox" id="c8" name="chg" value="▼ 1回での効果はわずかで、継続が必要だと感じた"><label for="c8"><span class="cb"></span>1回での効果はわずかで、継続が必要だと感じた</label></li>
+        </ul>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo(4)">← 戻る</button>
+      <button class="btn btn-next" onclick="next5()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 6: Q⑤ スタッフ・店内の印象 -->
+  <div class="step" id="step-6">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num">Question 06</span>
+        <div class="q-title">スタッフや店内の雰囲気は<br>いかがでしたか？</div>
+        <div class="q-note">※ あてはまるものをすべて選んでください（赤字はネガティブな選択肢です）</div>
+      </div>
+      <div class="q-body">
+        <ul class="opt-list">
+          <li class="opt-item"><input type="checkbox" id="i1" name="imp" value="スタッフがとても感じよく丁寧な対応だった"><label for="i1"><span class="cb"></span>スタッフがとても感じよく丁寧な対応だった</label></li>
+          <li class="opt-item"><input type="checkbox" id="i2" name="imp" value="肌の状態や施術内容をわかりやすく説明してくれた"><label for="i2"><span class="cb"></span>肌の状態や施術内容をわかりやすく説明してくれた</label></li>
+          <li class="opt-item"><input type="checkbox" id="i3" name="imp" value="店内が清潔感があり落ち着いた雰囲気だった"><label for="i3"><span class="cb"></span>店内が清潔感があり落ち着いた雰囲気だった</label></li>
+          <li class="opt-item"><input type="checkbox" id="i4" name="imp" value="完全予約制でほかのお客様を気にせずリラックスできた"><label for="i4"><span class="cb"></span>完全予約制でほかのお客様を気にせずリラックスできた</label></li>
+          <li class="opt-item"><input type="checkbox" id="i5" name="imp" value="押し売りなどがなく安心して受けられた"><label for="i5"><span class="cb"></span>押し売りなどがなく安心して受けられた</label></li>
+          <li class="opt-item"><input type="checkbox" id="i6" name="imp" value="リラックスできる空間でとても心地よかった"><label for="i6"><span class="cb"></span>リラックスできる空間でとても心地よかった</label></li>
+          <li class="opt-item negative"><input type="checkbox" id="i7" name="imp" value="▼ 待合スペースがやや狭く感じた"><label for="i7"><span class="cb"></span>待合スペースがやや狭く感じた</label></li>
+          <li class="opt-item negative"><input type="checkbox" id="i8" name="imp" value="▼ 価格がやや高めに感じた"><label for="i8"><span class="cb"></span>価格がやや高めに感じた</label></li>
+        </ul>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo(5)">← 戻る</button>
+      <button class="btn btn-next" onclick="next6()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 7: 自由記述 -->
+  <div class="step" id="step-7">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num">Question 07</span>
+        <div class="q-title">その他、自由にコメントが<br>あればお聞かせください</div>
+        <div class="q-note">※ 任意・空欄でもOKです</div>
+      </div>
+      <div class="q-body">
+        <div class="text-input-wrap">
+          <textarea class="free-textarea" id="free-text" rows="4" placeholder="例：初めてのエステで緊張していましたが、スタッフの方が優しく対応してくれて安心しました。また来たいです。"></textarea>
+        </div>
+        <div class="input-hint">
+          施術の感想・スタッフへのメッセージ・気になった点など、
+          何でもお書きください。文章作成の参考にします。
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo(6)">← 戻る</button>
+      <button class="btn btn-next" onclick="next7()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 8: 満足度スコア -->
+  <div class="step" id="step-8">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num">Question 08</span>
+        <div class="q-title">総合的な満足度を<br>教えてください</div>
+        <div class="q-note">※ 10が最高、1が最低です</div>
+      </div>
+      <div class="q-body">
+        <div class="score-grid" id="score-grid"></div>
+        <div class="score-labels"><span>最高 10</span><span>最低 1</span></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo(7)">← 戻る</button>
+      <button class="btn btn-next" onclick="next8()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- STEP 9: 絵文字選択 -->
+  <div class="step" id="step-9">
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num">Question 09</span>
+        <div class="q-title">文章に絵文字は<br>使いたいですか？</div>
+        <div class="q-note">※ 1つ選んでください</div>
+      </div>
+      <div class="q-body">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <button class="select-btn emoji-btn" id="emoji-many" onclick="selectEmoji('many')" style="font-size:17px; padding:18px 15px; text-align:left; display:flex; align-items:center; gap:12px;">
+            <span style="font-size:22px">😊✨💕</span>
+            <span>使いたい</span>
+          </button>
+          <button class="select-btn emoji-btn" id="emoji-few" onclick="selectEmoji('few')" style="font-size:17px; padding:18px 15px; text-align:left; display:flex; align-items:center; gap:12px;">
+            <span style="font-size:22px">🌿</span>
+            <span>少しだけ使いたい</span>
+          </button>
+          <button class="select-btn emoji-btn" id="emoji-none" onclick="selectEmoji('none')" style="font-size:17px; padding:18px 15px; text-align:left; display:flex; align-items:center; gap:12px;">
+            <span style="font-size:22px">🚫</span>
+            <span>使いたくない</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo(8)">← 戻る</button>
+      <button class="btn btn-next" onclick="next9()">クチコミを生成する ✨</button>
+    </div>
+  </div>
+
+  <!-- STEP 10: ローディング -->
+  <div class="step" id="step-10">
+    <div class="loading-wrap">
+      <div class="loading-ring"></div>
+      <div class="loading-text">Generating...</div>
+      <div class="loading-sub">クチコミを作成中です。しばらくお待ちください</div>
+    </div>
+  </div>
+
+  <!-- STEP 11: 結果 -->
+  <div class="step" id="step-11">
+    <div class="result-wrap">
+      <div class="result-head">
+        <span class="result-head-icon">✨</span>
+        <div>
+          <div class="result-head-text">クチコミ文章</div>
+          <div class="result-head-sub">GENERATED REVIEW</div>
+        </div>
+      </div>
+      <div class="result-body">
+        <div class="disclaimer-note">
+          この文章はお客様の実体験をもとに作成されています。内容に誤りや気になる点がございましたら、投稿前にご自身で修正をお願いいたします。
+        </div>
+        <div class="review-text" id="review-output" style="margin-top:14px"></div>
+        <div class="action-btn-row">
+          <button class="action-btn btn-remake" onclick="remakeReview()">作り直す</button>
+          <button class="action-btn btn-restart" onclick="restartAll()">最初からやりなおす</button>
+        </div>
+        <button class="copy-btn" id="copy-btn" onclick="copyReview()">
+          <span>📋</span><span>クチコミをコピーする</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="paste-test-wrap">
+      <div class="paste-test-label">
+        <span style="font-size:18px">✍️</span>
+        <span>コピーできているか確認する</span>
+      </div>
+      <textarea class="paste-test-area" id="paste-test-area"
+        placeholder="ここを長押し（またはタップ）して「貼り付け」を選んでください"
+        rows="5" readonly
+        onfocus="this.removeAttribute('readonly'); this.placeholder='ここに貼り付けてください（長押し→貼り付け）';">
+      </textarea>
+      <div class="paste-test-status" id="paste-test-status"></div>
+      <button class="paste-clear-btn" onclick="clearPasteTest()">クリア</button>
+    </div>
+
+    <div class="step-guide">
+      <div class="step-guide-title">NEXT STEP ― Googleクチコミへの投稿方法</div>
+      <ol>
+        <li>上の「コピーする」ボタンを押してください</li>
+        <li>下の「Googleクチコミを書く」ボタンをタップ</li>
+        <li>コピーした文章を貼り付けて送信</li>
+      </ol>
+    </div>
+    <a href="https://maps.app.goo.gl/Kp4C7jTAbo3yU8zUA"
+       target="_blank" class="btn-google">
+      <span>🔍</span><span>Googleクチコミを書く</span>
+    </a>
+    <div class="footer-note">ご協力ありがとうございます ― beauty salon R</div>
+  </div>
+
+</div>
+
+<script>
+let answers = { menus:[], goodPoints:[], recommend:[], change:[], impression:[], freeText:'', gender:'', age:'', score:0, emojiPref:'' };
+let currentStep = 0;
+const TOTAL = 11;
+const DISPLAY_TOTAL = 9; // 表示上の質問数
+function goTo(n) {
+  document.getElementById('step-' + currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('step-' + currentStep).classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function updateProgress() {
+  const pct = Math.round((Math.max(0, currentStep) / TOTAL) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('step-label').textContent =
+    currentStep === 0 ? 'STEP 0 / ' + DISPLAY_TOTAL : 'STEP ' + Math.min(currentStep, DISPLAY_TOTAL) + ' / ' + DISPLAY_TOTAL;
+  document.getElementById('step-pct').textContent = pct + '%';
+}
+
+function selectGender(val) {
+  answers.gender = val;
+  document.querySelectorAll('.gender-grid .select-btn').forEach(b => b.classList.remove('selected'));
+  const map = { '男性':'g-male','女性':'g-female','未回答':'g-none' };
+  document.getElementById(map[val]).classList.add('selected');
+}
+function selectAge(val) {
+  answers.age = val;
+  document.querySelectorAll('.age-grid .select-btn').forEach(b => b.classList.remove('selected'));
+  const map = { '10代以下':'a-teen','20代':'a-20','30代':'a-30','40代':'a-40','50代':'a-50','60代':'a-60','70代以上':'a-70' };
+  document.getElementById(map[val]).classList.add('selected');
+}
+function next1ga() {
+  if (!answers.gender) { alert('性別を選んでください'); return; }
+  if (!answers.age) { alert('年代を選んでください'); return; }
+  goTo(2);
+}
+function next2() {
+  const checked = [...document.querySelectorAll('input[name="menu"]:checked')].map(e => e.value);
+  if (!checked.length) { alert('少なくとも1つ選んでください'); return; }
+  answers.menus = checked;
+  goTo(3);
+}
+function next3() {
+  const checked = [...document.querySelectorAll('input[name="good"]:checked')].map(e => e.value);
+  if (!checked.length) { alert('少なくとも1つ選んでください'); return; }
+  answers.goodPoints = checked;
+  goTo(4);
+}
+function next4() {
+  const checked = [...document.querySelectorAll('input[name="rec"]:checked')].map(e => e.value);
+  if (!checked.length) { alert('少なくとも1つ選んでください'); return; }
+  answers.recommend = checked;
+  goTo(5);
+}
+function next5() {
+  const checked = [...document.querySelectorAll('input[name="chg"]:checked')].map(e => e.value);
+  if (!checked.length) { alert('少なくとも1つ選んでください'); return; }
+  answers.change = checked;
+  goTo(6);
+}
+function next6() {
+  const checked = [...document.querySelectorAll('input[name="imp"]:checked')].map(e => e.value);
+  if (!checked.length) { alert('少なくとも1つ選んでください'); return; }
+  answers.impression = checked;
+  goTo(7);
+}
+function next7() {
+  answers.freeText = (document.getElementById('free-text').value || '').trim();
+  buildScoreGrid();
+  goTo(8);
+}
+function next8() {
+  if (!answers.score) { alert('満足度を選んでください'); return; }
+  goTo(9);
+}
+function selectEmoji(val) {
+  answers.emojiPref = val;
+  document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+  const map = { many:'emoji-many', few:'emoji-few', none:'emoji-none' };
+  document.getElementById(map[val]).classList.add('selected');
+}
+function next9() {
+  if (!answers.emojiPref) { alert('絵文字の使い方を選んでください'); return; }
+  doGenerate();
+}
+function buildScoreGrid() {
+  const grid = document.getElementById('score-grid');
+  grid.innerHTML = '';
+  for (let i = 10; i >= 1; i--) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'score-btn' + (answers.score === i ? ' selected' : '');
+    btn.textContent = i;
+    btn.addEventListener('click', function() {
+      answers.score = i;
+      document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+    grid.appendChild(btn);
+  }
+}
+
+async function doGenerate() {
+  goTo(10);
+
+  // 文字数制御
+  let lengthRule = '';
+  if (answers.score === 10) lengthRule = '- 文字数は400文字程度にすること';
+  else if (answers.score === 9) lengthRule = '- 文字数は300文字程度にすること';
+  else lengthRule = '- 文字数は200文字程度にすること';
+
+  // 絵文字ルール（emojiPref優先）
+  let emojiRule = '';
+  if (answers.emojiPref === 'none') {
+    emojiRule = `- 絵文字は一切使用しないこと\n- 感情を表現する際は「！」を自然に使うこと（1〜2箇所程度）`;
+  } else if (answers.emojiPref === 'few') {
+    emojiRule = `- 絵文字を1〜2個だけ使用すること（✨💆‍♀️🌿💕😊🪷🫧💎など、エステ・美容にふさわしい絵文字を選ぶこと）\n- 絵文字の直後は必ず改行を入れること\n- 「！」も文中に自然に使うこと`;
+  } else {
+    // many: 3〜5個
+    const count = Math.floor(Math.random() * 3) + 3;
+    emojiRule = `- 絵文字を${count}個使用すること（✨💆‍♀️🌿💕😊🪷🫧💎など、エステ・美容にふさわしい絵文字を選ぶこと）\n- 絵文字の直後は必ず改行を入れること\n- 「！」も文中に自然に使うこと`;
+  }
+
+  // ペルソナ文体ルール
+  const gender = answers.gender || '未回答';
+  const age = answers.age || '';
+  let personaRule = '';
+
+  if (gender === '女性' && age === '10代以下') {
+    personaRule = `- 投稿者は10代以下の女性。学生らしいフレッシュで素直な口語体で書くこと。「はじめてのエステ」「びっくりした！」「すごかった！」など若い世代らしい素直な驚きや感動が伝わる文章にすること`;
+  } else if (gender === '女性' && age === '20代') {
+    personaRule = `- 投稿者は20代の女性。友達に話すような自然な口語体で書くこと。「めっちゃ」「すごく」「感動した！」など若い世代らしい表現を自然に使うこと。テンションが伝わる元気な文章にすること`;
+  } else if (gender === '女性' && age === '30代') {
+    personaRule = `- 投稿者は30代の女性。親しみやすく温かみのある口語体で書くこと。「とても」「すごく」「よかった」など感情を素直に表現しつつ、落ち着きも感じられる文章にすること`;
+  } else if (gender === '女性' && age === '40代') {
+    personaRule = `- 投稿者は40代の女性。丁寧で落ち着いた言葉遣いにすること。「〜でした」「〜と感じました」など経験や視点の深さが感じられる、信頼感のある文章にすること`;
+  } else if (gender === '女性' && age === '50代') {
+    personaRule = `- 投稿者は50代の女性。ていねいで穏やかな言葉遣いにすること。「〜でした」「〜と思います」を基本とした、落ち着いた大人の文章にすること`;
+  } else if (gender === '女性' && age === '60代') {
+    personaRule = `- 投稿者は60代の女性。穏やかで丁寧な口語体で書くこと。「おかげさまで」「とても嬉しく思いました」など、感謝の気持ちが自然に表れる温かみのある文章にすること`;
+  } else if (gender === '女性' && age === '70代以上') {
+    personaRule = `- 投稿者は70代以上の女性。ゆっくりと丁寧な口語体で書くこと。「〜でございました」は使いすぎず、「〜でした」「〜と思いました」を基本にした、穏やかで品のある文章にすること`;
+  } else if (gender === '男性' && age === '10代以下') {
+    personaRule = `- 投稿者は10代以下の男性。率直でシンプルな口語体で書くこと。「よかった」「すごかった」など若い男性らしい素直な感想を短くテンポよくまとめること`;
+  } else if (gender === '男性' && age === '20代') {
+    personaRule = `- 投稿者は20代の男性。シンプルで率直な口語体で書くこと。「良かった」「助かった」「マジでおすすめ」など若い男性らしい素直な言葉を使い、短くテンポよい文章にすること`;
+  } else if (gender === '男性' && age === '30代') {
+    personaRule = `- 投稿者は30代の男性。率直でわかりやすい口語体で書くこと。「良かった」「おすすめです」など端的な表現を使いながら、具体的な良さが伝わる文章にすること`;
+  } else if (gender === '男性' && age === '40代') {
+    personaRule = `- 投稿者は40代の男性。落ち着いた信頼感のある文体で書くこと。「満足しています」「安心できました」「丁寧な対応でした」など、誠実さと説得力が伝わる文章にすること`;
+  } else if (gender === '男性' && age === '50代') {
+    personaRule = `- 投稿者は50代の男性。簡潔で信頼感のある文体で書くこと。事実と感想を端的に伝える、落ち着いた文章にすること。「〜でした」「〜と感じました」を使うこと`;
+  } else if (gender === '男性' && age === '60代') {
+    personaRule = `- 投稿者は60代の男性。落ち着いた格調のある文体で書くこと。余計な言葉を省き、誠実さと感謝が伝わる文章にすること`;
+  } else if (gender === '男性' && age === '70代以上') {
+    personaRule = `- 投稿者は70代以上の男性。簡潔で重みのある文体で書くこと。事実と感想を端的にまとめ、信頼感と品格が伝わる文章にすること`;
+  } else {
+    personaRule = `- 投稿者の性別・年代は未回答。自然で読みやすい口語体にすること`;
+  }
+
+  const menuLabels = {
+    facial: 'フェイシャルエステ・韓国肌管理',
+    depilation: '脱毛サロン（全身・部分脱毛）',
+    liftup: 'リフトアップ・小顔ケア',
+    pores: '毛穴ケア・毛穴洗浄',
+    acne: 'ニキビケア・肌荒れ改善',
+    sensitive: '敏感肌ケア・肌質改善',
+    trial: '初回体験・トライアルコース'
+  };
+  const menusText = answers.menus.map(m => menuLabels[m] || m).join('、');
+  const freeText = answers.freeText ? `【お客様からの自由コメント】\n${answers.freeText}` : '';
+
+  const positives = answers.goodPoints.filter(p => !p.startsWith('▼')).map(p => '・'+p).join('\n');
+  const negatives = answers.goodPoints.filter(p => p.startsWith('▼')).map(p => '・'+p.replace('▼ ','')).join('\n');
+  const recPositives = answers.recommend.filter(r => !r.startsWith('▼')).map(r => '・'+r).join('\n');
+  const recNegatives = answers.recommend.filter(r => r.startsWith('▼')).map(r => '・'+r.replace('▼ ','')).join('\n');
+  const chgPositives = answers.change.filter(c => !c.startsWith('▼')).map(c => '・'+c).join('\n');
+  const chgNegatives = answers.change.filter(c => c.startsWith('▼')).map(c => '・'+c.replace('▼ ','')).join('\n');
+  const impPositives = answers.impression.filter(i => !i.startsWith('▼')).map(i => '・'+i).join('\n');
+  const impNegatives = answers.impression.filter(i => i.startsWith('▼')).map(i => '・'+i.replace('▼ ','')).join('\n');
+
+  const negativeSection = [negatives, recNegatives, chgNegatives, impNegatives].filter(Boolean).join('\n');
+
+  const prompt = `あなたはGoogleクチコミ文章作成の専門家です。
+以下のお客様の回答をもとに、自然で温かみのある、MEO効果の高いGoogleクチコミ文章を作成してください。
+
+【利用メニュー】
+${menusText}
+
+【サービスの良かった点】
+${positives}
+
+【おすすめしたい方】
+${recPositives}
+
+【施術前後の変化】
+${chgPositives}
+
+【スタッフ・店内の印象】
+${impPositives}
+
+【ネガティブな点（正直に含めること）】
+${negativeSection || 'なし'}
+
+${freeText}
+
+【作成条件】
+- 店舗名「beauty salon R」を必ず含めること
+- 「韓国肌管理」「エステサロン」「フェイシャルエステ」「敏感肌」「肌改善」「毛穴ケア」「ニキビケア」「リフトアップ」「脱毛サロン」「完全予約制」などのMEOキーワードを自然に盛り込むこと（全部入れる必要はなく、利用メニューに合わせて自然に選ぶこと）
+- ネガティブな点が選ばれている場合は、それを正直に、かつ「でも全体的には満足した」「次回に期待したい」のようなフォローの言葉と一緒に自然に盛り込むこと。ネガティブな内容を無視せず、リアルなクチコミとして機能させること
+- お客様からの自由コメントがある場合はその内容を文章に自然に織り込むこと
+- 実際のお客様が自分の言葉でスマホから投稿したような、自然でリアルな口語体にすること
+- **や""などの記号は絶対に使わないこと
+- 箇条書きや見出しは使わず、普通の会話文として書くこと
+- 文章全体が流れるように繋がっていること
+- 「スタッフの皆様」「貴店」などの過度に丁寧な表現は避けること
+- 同じ表現・言い回しを繰り返さないこと
+- 感情的な温かみと具体性を両立させること
+- 段落は2〜3つに分けること
+${lengthRule}
+${personaRule}
+${emojiRule}
+- クチコミ文章のみを出力し、前置きや説明文は一切不要`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || 'クチコミの生成に失敗しました。もう一度お試しください。';
+    document.getElementById('review-output').textContent = text;
+    clearPasteTest();
+    goTo(11);
+  } catch(e) {
+    alert('通信エラーが発生しました。もう一度お試しください。');
+    goTo(9);
+  }
+}
+
+function remakeReview() { doGenerate(); }
+function restartAll() {
+  answers = { menus:[], goodPoints:[], recommend:[], change:[], impression:[], freeText:'', gender:'', age:'', score:0, emojiPref:'' };
+  document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+  document.querySelectorAll('textarea').forEach(el => el.value = '');
+  document.querySelectorAll('.select-btn').forEach(b => b.classList.remove('selected'));
+  goTo(0);
+}
+function copyReview() {
+  const text = document.getElementById('review-output').textContent;
+  const btn = document.getElementById('copy-btn');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showCopied(btn)).catch(() => fallbackCopy(text, btn));
+  } else {
+    fallbackCopy(text, btn);
+  }
+}
+function fallbackCopy(text, btn) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '0';
+  ta.style.opacity = '0'; ta.style.fontSize = '16px';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { const ok = document.execCommand('copy'); if (ok) showCopied(btn); else showCopyFail(btn); }
+  catch(e) { showCopyFail(btn); }
+  document.body.removeChild(ta);
+}
+function showCopied(btn) {
+  btn.classList.add('copied');
+  btn.innerHTML = '<span>✅</span><span>コピーしました！</span>';
+  setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<span>📋</span><span>クチコミをコピーする</span>'; }, 2500);
+}
+function showCopyFail(btn) {
+  btn.innerHTML = '<span>⚠️</span><span>テキストを長押しして手動でコピーしてください</span>';
+  setTimeout(() => { btn.innerHTML = '<span>📋</span><span>クチコミをコピーする</span>'; }, 3500);
+}
+function clearPasteTest() {
+  const ta = document.getElementById('paste-test-area');
+  const st = document.getElementById('paste-test-status');
+  ta.value = ''; st.innerHTML = '';
+  ta.setAttribute('readonly', true);
+  ta.placeholder = 'ここを長押し（またはタップ）して「貼り付け」を選んでください';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  buildScoreGrid();
+  const ta = document.getElementById('paste-test-area');
+  if (!ta) return;
+  ta.addEventListener('input', () => {
+    const st = document.getElementById('paste-test-status');
+    const reviewText = document.getElementById('review-output').textContent.trim();
+    const pasted = ta.value.trim();
+    if (!pasted) { st.innerHTML = ''; return; }
+    if (pasted === reviewText) {
+      st.innerHTML = '✅ クチコミ文章が正しく貼り付けられています！'; st.style.color = '#2e7d32';
+    } else if (pasted.length > 10) {
+      st.innerHTML = '📝 テキストが貼り付けられました'; st.style.color = '#7a6e63';
+    }
+  });
+});
+</script>
+</body>
+</html>
