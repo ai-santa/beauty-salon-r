@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title id="page-title">クチコミ作成</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --rose:    #c8927a;
+      --rose-lt: #e8c4b8;
+      --cream:   #fdf8f5;
+      --warm:    #f5ede8;
+      --dark:    #2d2420;
+      --mid:     #7a5c54;
+      --light:   #b8998f;
+      --white:   #ffffff;
+      --neg:     #c0392b;
+      --shadow:  rgba(200,146,122,0.18);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--cream);
+      color: var(--dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── ヘッダー ── */
+    .header {
+      width: 100%;
+      background: var(--white);
+      border-bottom: 1px solid var(--rose-lt);
+      text-align: center;
+      padding: 20px 16px 16px;
+    }
+    .header-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      color: var(--rose);
+      display: block;
+    }
+    .header-sub {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--light);
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    /* ── プログレスバー ── */
+    .progress-wrap {
+      width: 100%;
+      max-width: 480px;
+      padding: 12px 20px 0;
+    }
+    .progress-bar {
+      height: 3px;
+      background: var(--rose-lt);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--rose), #e8a090);
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+    .progress-text {
+      font-size: 11px;
+      color: var(--light);
+      text-align: right;
+      margin-top: 5px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── カード ── */
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--white);
+      border-radius: 16px;
+      margin: 16px 16px 24px;
+      padding: 28px 24px;
+      box-shadow: 0 4px 24px var(--shadow);
+      animation: fadeUp 0.4s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── ウェルカム画面 ── */
+    .welcome-icon {
+      font-size: 40px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .welcome-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--rose);
+      text-align: center;
+      letter-spacing: 0.08em;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .welcome-body {
+      font-size: 13.5px;
+      line-height: 1.9;
+      color: var(--mid);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .welcome-note {
+      font-size: 11.5px;
+      color: var(--light);
+      text-align: center;
+      line-height: 1.8;
+      padding: 12px;
+      background: var(--warm);
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+
+    /* ── 質問ラベル ── */
+    .step-label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--rose);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .question-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--dark);
+      line-height: 1.6;
+      margin-bottom: 6px;
+    }
+    .question-sub {
+      font-size: 12px;
+      color: var(--light);
+      margin-bottom: 20px;
+    }
+
+    /* ── チェックボックス選択肢 ── */
+    .checkbox-group { display: flex; flex-direction: column; gap: 10px; }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 16px;
+      border: 1.5px solid var(--rose-lt);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      color: var(--dark);
+      user-select: none;
+    }
+    .checkbox-item:hover { background: var(--warm); }
+    .checkbox-item.selected {
+      background: var(--warm);
+      border-color: var(--rose);
+      color: var(--rose);
+      font-weight: 500;
+    }
+    .checkbox-item.negative { color: var(--neg); border-color: #ecc; }
+    .checkbox-item.negative.selected { background: #fff0ee; border-color: var(--neg); }
+    .checkbox-box {
+      width: 20px; height: 20px;
+      border: 2px solid var(--rose-lt);
+      border-radius: 4px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .checkbox-item.selected .checkbox-box { background: var(--rose); border-color: var(--rose); }
+    .checkbox-item.negative.selected .checkbox-box { background: var(--neg); border-color: var(--neg); }
+    .check-mark { color: white; font-size: 12px; display: none; }
+    .checkbox-item.selected .check-mark { display: block; }
+
+    /* ── ラジオボタン式ボタン ── */
+    .radio-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    .radio-btn {
+      flex: 1; min-width: 80px;
+      padding: 11px 8px;
+      border: 1.5px solid var(--rose-lt);
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 13.5px;
+      color: var(--dark);
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .radio-btn:hover { background: var(--warm); }
+    .radio-btn.selected {
+      background: var(--rose);
+      border-color: var(--rose);
+      color: white;
+      font-weight: 500;
+    }
+
+    /* ── 満足度ボタン ── */
+    .score-group { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .score-btn {
+      width: calc(20% - 8px);
+      aspect-ratio: 1;
+      border: 1.5px solid var(--rose-lt);
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--mid);
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      user-select: none;
+    }
+    .score-btn:hover { background: var(--warm); }
+    .score-btn.selected { background: var(--rose); border-color: var(--rose); color: white; }
+    .score-labels {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--light);
+      margin-top: 8px; padding: 0 4px;
+    }
+
+    /* ── テキストエリア ── */
+    textarea {
+      width: 100%;
+      border: 1.5px solid var(--rose-lt);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 14px;
+      color: var(--dark);
+      resize: vertical;
+      min-height: 110px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--white);
+    }
+    textarea:focus { border-color: var(--rose); }
+    textarea::placeholder { color: var(--light); }
+
+    /* ── ボタン ── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--rose), #e0a090);
+      color: white;
+      box-shadow: 0 4px 16px rgba(200,146,122,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,146,122,0.45); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      background: var(--warm);
+      color: var(--mid);
+      margin-top: 10px;
+    }
+    .btn-secondary:hover { background: var(--rose-lt); }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--rose);
+      color: var(--rose);
+      margin-top: 10px;
+    }
+    .btn-outline:hover { background: var(--warm); }
+    .btn-google {
+      background: linear-gradient(135deg, #4285f4, #34a0f5);
+      color: white;
+      margin-top: 10px;
+      box-shadow: 0 4px 16px rgba(66,133,244,0.3);
+    }
+    .btn-google:hover { transform: translateY(-1px); }
+    .btn-copy {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      box-shadow: 0 4px 16px rgba(46,204,113,0.3);
+    }
+    .btn-copy:hover { transform: translateY(-1px); }
+
+    /* ── ローディング ── */
+    .loading-wrap { text-align: center; padding: 20px 0; }
+    .loading-icon { font-size: 36px; animation: spin 2s linear infinite; display: inline-block; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .loading-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px; font-weight: 300;
+      color: var(--rose); margin: 16px 0 8px;
+      letter-spacing: 0.08em;
+    }
+    .loading-sub { font-size: 12px; color: var(--light); }
+
+    /* ── 結果ページ ── */
+    .disclaimer {
+      font-size: 11.5px;
+      color: var(--mid);
+      background: var(--warm);
+      border-left: 3px solid var(--rose-lt);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+    .review-box {
+      background: var(--cream);
+      border: 1px solid var(--rose-lt);
+      border-radius: 10px;
+      padding: 18px;
+      font-size: 14.5px;
+      line-height: 1.9;
+      color: var(--dark);
+      white-space: pre-wrap;
+      margin-bottom: 20px;
+      min-height: 120px;
+    }
+    .paste-area {
+      width: 100%;
+      min-height: 80px;
+      border: 1.5px dashed var(--rose-lt);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 13px;
+      color: var(--mid);
+      background: var(--white);
+      resize: vertical;
+      outline: none;
+      margin-bottom: 8px;
+    }
+    .paste-area:focus { border-color: var(--rose); }
+    .paste-label {
+      font-size: 12px; color: var(--light);
+      margin-bottom: 6px; text-align: center;
+    }
+
+    /* ── ページ表示制御 ── */
+    .step { display: none; }
+    .step.active { display: block; }
+
+    /* ── ユーティリティ ── */
+    .mt-16 { margin-top: 16px; }
+    .text-center { text-align: center; }
+    .divider {
+      height: 1px; background: var(--rose-lt);
+      margin: 20px 0;
+    }
+    .result-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px; font-weight: 300;
+      color: var(--rose); text-align: center;
+      letter-spacing: 0.1em; margin-bottom: 16px;
+    }
+    .copy-success {
+      text-align: center; font-size: 13px;
+      color: #27ae60; margin-top: 8px;
+      min-height: 20px;
+    }
+
+    /* ── 性別年代 グリッド ── */
+    .gender-age-wrap { display: flex; flex-direction: column; gap: 20px; }
+    .sub-label { font-size: 12px; color: var(--mid); font-weight: 500; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="header">
+  <span class="header-logo" id="header-salon-name">Beauty salon R</span>
+  <span class="header-sub">Google Review Assistant</span>
+</div>
+
+<!-- プログレスバー -->
+<div class="progress-wrap" id="progress-wrap" style="display:none;">
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="progress-text" id="progress-text"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 0: ウェルカム -->
+<!-- ============================================================ -->
+<div class="card step active" id="step-0">
+  <div class="welcome-icon">✨</div>
+  <div class="welcome-title" id="welcome-title">いつもありがとうございます</div>
+  <div class="welcome-body" id="welcome-body"></div>
+  <div class="welcome-note">
+    所要時間：約2〜3分<br>
+    内容をご確認のうえ、よろしければ<br>
+    Google MAPのクチコミへご投稿ください
+  </div>
+  <button class="btn btn-primary" onclick="goStep(1)">はじめる</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 1: Q① 利用サービス -->
+<!-- ============================================================ -->
+<div class="card step" id="step-1">
+  <div class="step-label">Q 1 / 8</div>
+  <div class="question-title">本日ご利用いただいたサービスを<br>教えてください</div>
+  <div class="question-sub">複数選択できます</div>
+  <div class="checkbox-group" id="service-group"></div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-step1-next" onclick="goStep(2)" disabled>次へ</button>
+    <button class="btn btn-secondary" onclick="goStep(0)">戻る</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 2: Q② 性別・年代 -->
+<!-- ============================================================ -->
+<div class="card step" id="step-2">
+  <div class="step-label">Q 2 / 8</div>
+  <div class="question-title">性別と年代を教えてください</div>
+  <div class="question-sub">クチコミの文体に反映されます</div>
+  <div class="gender-age-wrap">
+    <div>
+      <div class="sub-label">性別</div>
+      <div class="radio-group" id="gender-group">
+        <div class="radio-btn" data-val="female" onclick="selectRadio('gender','female',this)">女性</div>
+        <div class="radio-btn" data-val="male" onclick="selectRadio('gender','male',this)">男性</div>
+        <div class="radio-btn" data-val="other" onclick="selectRadio('gender','other',this)">未回答</div>
+      </div>
+    </div>
+    <div>
+      <div class="sub-label">年代</div>
+      <div class="radio-group" id="age-group">
+        <div class="radio-btn" data-val="20s" onclick="selectRadio('age','20s',this)">20代以下</div>
+        <div class="radio-btn" data-val="30s" onclick="selectRadio('age','30s',this)">30代</div>
+        <div class="radio-btn" data-val="40s" onclick="selectRadio('age','40s',this)">40代</div>
+        <div class="radio-btn" data-val="50s" onclick="selectRadio('age','50s',this)">50代以上</div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-step2-next" onclick="goStep(3)" disabled>次へ</button>
+    <button class="btn btn-secondary" onclick="goStep(1)">戻る</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 3: Q③ 良かった点 -->
+<!-- ============================================================ -->
+<div class="card step" id="step-3">
+  <div class="step-label">Q 3 / 8</div>
+  <div class="question-title">サービスで良かった点を<br>教えてください</div>
+  <div class="question-sub">複数選択できます</div>
+  <div class="checkbox-group" id="good-points-group"></div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-step3-next" onclick="goStep(4)" disabled>次へ</button>
+    <button class="btn btn-secondary" onclick="goStep(2)">戻る</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 4: Q④ おすすめしたい方 -->
+<!-- ============================================================ -->
+<div class="card step" id="step-4">
+  <div class="step-label">Q 4 / 8</div>
+  <div class="question-title">どんな方におすすめしたいですか？</div>
+  <div class="question-sub">複数選択できます</div>
+  <div class="checkbox-group" id="recommendation-group"></div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-step4-next" onclick="goStep(5)" disabled>次へ</button>
+    <button class="btn btn-secondary" onclick="goStep(3)">戻る</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 5: Q⑤ 前後の変化 -->
+<!-- ============================================================ -->
+<div class="card step" id="step-5">
+  <div class="step-label">Q 5 / 8</div>
+  <div class="question-title">サービスを受けて、<br>どんな変化がありましたか？</div>
+  <div class="question-sub">複数選択できます</div>
+  <div class="checkbox-group" id="changes-group"></div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-step5-next" onclick="goStep(6)" disabled>次へ</button>
+    <button class="btn btn-secondary" onclick="goStep(4)">戻る</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 6: Q⑥ スタッフ・店内の印象 -->
+<!-- ============================================================ -->
+<div class="card step" id="step-6">
+  <div class="step-label">Q 6 / 8</div>
+  <div class="question-title">スタッフや店内の印象を<br>教えてください</div>
+  <div class="question-sub">複数選択できます</div>
+  <div class="checkbox-group" id="staff-group"></div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-step6-next" onclick="goStep(7)" disabled>次へ</button>
+    <button class="btn btn-secondary" onclick="goStep(5)">戻る</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 7: Q⑦ 自由記述（任意） -->
+<!-- ============================================================ -->
+<div class="card step" id="step-7">
+  <div class="step-label">Q 7 / 8</div>
+  <div class="question-title">その他、自由にお書きください</div>
+  <div class="question-sub">任意・空欄でも大丈夫です</div>
+  <textarea id="free-text" placeholder="良かった点・改善してほしい点など、なんでもお聞かせください"></textarea>
+  <div class="mt-16">
+    <button class="btn btn-primary" onclick="goStep(8)">次へ</button>
+    <button class="btn btn-secondary" onclick="goStep(6)">戻る</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 8: Q⑧ 満足度 -->
+<!-- ============================================================ -->
+<div class="card step" id="step-8">
+  <div class="step-label">Q 8 / 8</div>
+  <div class="question-title">総合的なご満足度を<br>教えてください</div>
+  <div class="question-sub">10が最高・1が最低です</div>
+  <div class="score-group" id="score-group"></div>
+  <div class="score-labels"><span>← 低い</span><span>高い →</span></div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-generate" onclick="generateReview()" disabled>クチコミを作成する</button>
+    <button class="btn btn-secondary" onclick="goStep(7)">戻る</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 9: ローディング -->
+<!-- ============================================================ -->
+<div class="card step" id="step-9">
+  <div class="loading-wrap">
+    <div class="loading-icon">✦</div>
+    <div class="loading-title">クチコミ文章を作成中です</div>
+    <div class="loading-sub">AIがあなたの体験をまとめています<br>少々お待ちください...</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- STEP 10: 完成・結果 -->
+<!-- ============================================================ -->
+<div class="card step" id="step-10">
+  <div class="result-title">✦ クチコミが完成しました</div>
+  <div class="disclaimer" id="disclaimer">
+    この文章はお客様の実体験をもとに作成されています。<br>
+    内容に誤りや気になる点がございましたら、<br>
+    投稿前にご自身で修正をお願いいたします。
+  </div>
+  <div class="review-box" id="review-result"></div>
+  <button class="btn btn-copy" onclick="copyReview()">クチコミをコピーする</button>
+  <div class="copy-success" id="copy-success"></div>
+  <div class="divider"></div>
+  <div class="paste-label">↓ ここに貼り付けて確認できます（任意）</div>
+  <textarea class="paste-area" placeholder="コピーしたクチコミをここに貼り付けてみてください"></textarea>
+  <div class="divider"></div>
+  <a id="google-review-link" href="#" target="_blank" class="btn btn-google" style="text-decoration:none;text-align:center;display:block;">
+    Googleクチコミへ投稿する
+  </a>
+  <button class="btn btn-outline" onclick="regenerate()">作り直す</button>
+  <button class="btn btn-secondary" onclick="resetAll()">最初からやりなおす</button>
+</div>
+
+<!-- ============================================================
+     JavaScript
+============================================================ -->
+<script src="config.js"></script>
+<script>
+// ──────────────────────────────────────────
+// 初期化
+// ──────────────────────────────────────────
+const state = {
+  services: [],
+  gender: null,
+  age: null,
+  goodPoints: [],
+  recommendations: [],
+  changes: [],
+  staffImpressions: [],
+  freeText: "",
+  score: null
+};
+
+const TOTAL_STEPS = 8;
+
+window.addEventListener('DOMContentLoaded', () => {
+  applyConfig();
+  buildStep1();
+  buildStep4();
+  buildStep5();
+  buildStep6();
+  buildScoreButtons();
+});
+
+// ──────────────────────────────────────────
+// config.jsの内容を画面に反映
+// ──────────────────────────────────────────
+function applyConfig() {
+  document.title = SALON_CONFIG.salonName + " | クチコミ作成";
+  document.getElementById('page-title').textContent = SALON_CONFIG.salonName + " | クチコミ作成";
+  document.getElementById('header-salon-name').textContent = SALON_CONFIG.salonName;
+  document.getElementById('welcome-title').textContent = "いつもありがとうございます";
+  document.getElementById('welcome-body').textContent =
+    SALON_CONFIG.welcomeMessage + "\n" + SALON_CONFIG.subMessage;
+  document.getElementById('google-review-link').href = SALON_CONFIG.googleReviewUrl;
+}
+
+// ──────────────────────────────────────────
+// ステップ移動
+// ──────────────────────────────────────────
+function goStep(n) {
+  document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+  document.getElementById('step-' + n).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const pw = document.getElementById('progress-wrap');
+  if (n === 0 || n === 9 || n === 10) {
+    pw.style.display = 'none';
+  } else {
+    pw.style.display = 'block';
+    const pct = Math.round((n / TOTAL_STEPS) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = n + ' / ' + TOTAL_STEPS;
+  }
+
+  // Q③ はサービス選択後に動的生成
+  if (n === 3) buildStep3();
+}
+
+// ──────────────────────────────────────────
+// Q① サービス
+// ──────────────────────────────────────────
+function buildStep1() {
+  const g = document.getElementById('service-group');
+  g.innerHTML = '';
+  SALON_CONFIG.services.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'checkbox-item';
+    el.dataset.id = s.id;
+    el.innerHTML = `<div class="checkbox-box"><span class="check-mark">✓</span></div>${s.label}`;
+    el.addEventListener('click', () => toggleService(s.id, el));
+    g.appendChild(el);
+  });
+}
+
+function toggleService(id, el) {
+  el.classList.toggle('selected');
+  if (el.classList.contains('selected')) {
+    if (!state.services.includes(id)) state.services.push(id);
+  } else {
+    state.services = state.services.filter(x => x !== id);
+  }
+  document.getElementById('btn-step1-next').disabled = state.services.length === 0;
+}
+
+// ──────────────────────────────────────────
+// Q② 性別・年代
+// ──────────────────────────────────────────
+function selectRadio(type, val, el) {
+  const groupId = type === 'gender' ? 'gender-group' : 'age-group';
+  document.querySelectorAll('#' + groupId + ' .radio-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  if (type === 'gender') state.gender = val;
+  else state.age = val;
+  checkStep2();
+}
+
+function checkStep2() {
+  document.getElementById('btn-step2-next').disabled = !(state.gender && state.age);
+}
+
+// ──────────────────────────────────────────
+// Q③ 良かった点（サービス別動的生成）
+// ──────────────────────────────────────────
+function buildStep3() {
+  const g = document.getElementById('good-points-group');
+  g.innerHTML = '';
+  state.goodPoints = [];
+
+  // 選択サービスに応じてオプションを集める
+  let options = [];
+  const hasFacial = state.services.includes('facial') || state.services.includes('both');
+  const hasDepil  = state.services.includes('depilation') || state.services.includes('both');
+
+  if (state.services.includes('both')) {
+    options = SALON_CONFIG.goodPoints.both;
+  } else if (hasFacial && hasDepil) {
+    // facial + depilation 個別選択
+    const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,4);
+    const dItems = SALON_CONFIG.goodPoints.depilation.filter(x => !x.negative).slice(0,4);
+    const fNeg = SALON_CONFIG.goodPoints.facial.find(x => x.negative);
+    options = [...fItems, ...dItems, fNeg];
+  } else if (hasFacial) {
+    options = SALON_CONFIG.goodPoints.facial;
+  } else {
+    options = SALON_CONFIG.goodPoints.depilation;
+  }
+
+  options.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'checkbox-item' + (s.negative ? ' negative' : '');
+    el.dataset.id = s.id;
+    el.innerHTML = `<div class="checkbox-box"><span class="check-mark">✓</span></div>${s.label}`;
+    el.addEventListener('click', () => toggleCheck(s.id, el, 'goodPoints', 'btn-step3-next'));
+    g.appendChild(el);
+  });
+
+  document.getElementById('btn-step3-next').disabled = true;
+}
+
+// ──────────────────────────────────────────
+// Q④ おすすめしたい方
+// ──────────────────────────────────────────
+function buildStep4() {
+  buildCheckboxGroup('recommendation-group', SALON_CONFIG.recommendations, 'recommendations', 'btn-step4-next');
+}
+
+// ──────────────────────────────────────────
+// Q⑤ 前後の変化
+// ──────────────────────────────────────────
+function buildStep5() {
+  buildCheckboxGroup('changes-group', SALON_CONFIG.changes, 'changes', 'btn-step5-next');
+}
+
+// ──────────────────────────────────────────
+// Q⑥ スタッフ・店内の印象
+// ──────────────────────────────────────────
+function buildStep6() {
+  buildCheckboxGroup('staff-group', SALON_CONFIG.staffImpressions, 'staffImpressions', 'btn-step6-next');
+}
+
+// ──────────────────────────────────────────
+// 共通チェックボックスビルダー
+// ──────────────────────────────────────────
+function buildCheckboxGroup(groupId, items, stateKey, btnId) {
+  const g = document.getElementById(groupId);
+  g.innerHTML = '';
+  items.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'checkbox-item' + (s.negative ? ' negative' : '');
+    el.dataset.id = s.id;
+    el.innerHTML = `<div class="checkbox-box"><span class="check-mark">✓</span></div>${s.label}`;
+    el.addEventListener('click', () => toggleCheck(s.id, el, stateKey, btnId));
+    g.appendChild(el);
+  });
+}
+
+function toggleCheck(id, el, stateKey, btnId) {
+  el.classList.toggle('selected');
+  if (el.classList.contains('selected')) {
+    if (!state[stateKey].includes(id)) state[stateKey].push(id);
+  } else {
+    state[stateKey] = state[stateKey].filter(x => x !== id);
+  }
+  document.getElementById(btnId).disabled = state[stateKey].length === 0;
+}
+
+// ──────────────────────────────────────────
+// Q⑧ 満足度ボタン（10→1の降順）
+// ──────────────────────────────────────────
+function buildScoreButtons() {
+  const g = document.getElementById('score-group');
+  g.innerHTML = '';
+  for (let i = 10; i >= 1; i--) {
+    const el = document.createElement('div');
+    el.className = 'score-btn';
+    el.textContent = i;
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+      state.score = i;
+      document.getElementById('btn-generate').disabled = false;
+    });
+    g.appendChild(el);
+  }
+}
+
+// ──────────────────────────────────────────
+// AI生成
+// ──────────────────────────────────────────
+async function generateReview() {
+  state.freeText = document.getElementById('free-text').value.trim();
+  goStep(9);
+
+  const prompt = buildPrompt();
+
+  try {
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: buildSystemPrompt(),
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || "生成に失敗しました。もう一度お試しください。";
+    document.getElementById('review-result').textContent = text;
+    document.getElementById('copy-success').textContent = '';
+    goStep(10);
+  } catch (e) {
+    document.getElementById('review-result').textContent = "通信エラーが発生しました。もう一度お試しください。";
+    goStep(10);
+  }
+}
+
+function buildSystemPrompt() {
+  return `あなたはGoogleクチコミの文章を自然に書くアシスタントです。
+以下のルールを厳守してください。
+
+【文体ルール（性別・年代別）】
+・女性20代以下：友達感覚・元気・若い表現
+・女性30代：親しみやすく温かみのある表現
+・女性40代：丁寧で経験の深さが感じられる表現
+・女性50代以上：穏やか・落ち着いた大人の表現
+・男性20代以下：率直・短め・若い男性らしい表現
+・男性30代：端的・具体的な表現
+・男性40代：誠実・信頼感のある表現
+・男性50代以上：簡潔・格調・重みのある表現
+・未回答：自然で読みやすい表現
+
+【文字数ルール】
+・満足度10：約400文字
+・満足度9：約300文字
+・満足度8以下：約200文字
+
+【絵文字ルール】
+・女性：絵文字を1〜5個使用（ランダムに自然な箇所へ）
+・男性：絵文字を0〜1個使用
+・未回答：絵文字なし
+・絵文字の直後は必ず改行する
+
+【禁止事項】
+・「**」「""」などのAI的な記号は使用禁止
+・箇条書き・見出し禁止（普通の会話文のみ）
+・「スタッフの皆様」「貴店」などの過度な敬語禁止
+・AIが書いたと分かるような文体禁止
+
+【ネガティブ対応】
+・ネガティブな内容が含まれる場合、「でも全体的には満足した」「次回は改善されることを期待したい」などのフォローを自然に添える
+
+【MEOキーワード】
+以下のキーワードを文章の流れを壊さない範囲で自然に盛り込む：
+${SALON_CONFIG.meoKeywords.join('、')}
+
+【追加指示】
+${SALON_CONFIG.promptNote}
+
+クチコミ文章のみを出力し、前置きや説明は一切不要です。`;
+}
+
+function buildPrompt() {
+  // サービス名を取得
+  const serviceLabels = state.services.map(id => {
+    const s = SALON_CONFIG.services.find(x => x.id === id);
+    return s ? s.label : id;
+  });
+
+  // 良かった点のラベルを取得
+  const allGoodPoints = [
+    ...SALON_CONFIG.goodPoints.facial,
+    ...SALON_CONFIG.goodPoints.depilation,
+    ...SALON_CONFIG.goodPoints.both
+  ];
+  const goodPointLabels = state.goodPoints.map(id => {
+    const found = allGoodPoints.find(x => x.id === id);
+    return found ? found.label : id;
+  });
+  const hasNegativeGood = state.goodPoints.some(id => {
+    const found = allGoodPoints.find(x => x.id === id);
+    return found?.negative;
+  });
+
+  // おすすめしたい方のラベル
+  const recLabels = state.recommendations.map(id => {
+    const found = SALON_CONFIG.recommendations.find(x => x.id === id);
+    return found ? found.label : id;
+  });
+  const hasNegativeRec = state.recommendations.some(id => {
+    const found = SALON_CONFIG.recommendations.find(x => x.id === id);
+    return found?.negative;
+  });
+
+  // 変化のラベル
+  const changeLabels = state.changes.map(id => {
+    const found = SALON_CONFIG.changes.find(x => x.id === id);
+    return found ? found.label : id;
+  });
+  const hasNegativeChange = state.changes.some(id => {
+    const found = SALON_CONFIG.changes.find(x => x.id === id);
+    return found?.negative;
+  });
+
+  // スタッフ印象のラベル
+  const staffLabels = state.staffImpressions.map(id => {
+    const found = SALON_CONFIG.staffImpressions.find(x => x.id === id);
+    return found ? found.label : id;
+  });
+  const hasNegativeStaff = state.staffImpressions.some(id => {
+    const found = SALON_CONFIG.staffImpressions.find(x => x.id === id);
+    return found?.negative;
+  });
+
+  const genderText = { female: '女性', male: '男性', other: '未回答' }[state.gender] || '未回答';
+  const ageText = { '20s': '20代以下', '30s': '30代', '40s': '40代', '50s': '50代以上' }[state.age] || '';
+  const hasAnyNegative = hasNegativeGood || hasNegativeRec || hasNegativeChange || hasNegativeStaff;
+
+  return `以下の情報をもとに、${SALON_CONFIG.salonName}のGoogleクチコミ文章を作成してください。
+
+【サロン名】${SALON_CONFIG.salonName}
+【利用サービス】${serviceLabels.join('・')}
+【性別】${genderText}
+【年代】${ageText}
+【満足度】${state.score}/10
+【サービスの良かった点】${goodPointLabels.join('、')}
+【おすすめしたい方】${recLabels.join('、')}
+【体験前後の変化】${changeLabels.join('、')}
+【スタッフ・店内の印象】${staffLabels.join('、')}
+【自由記述】${state.freeText || 'なし'}
+【ネガティブ要素の有無】${hasAnyNegative ? 'あり（全体的に満足したという自然なフォローを添えること）' : 'なし'}
+
+上記の情報を自然な会話文にまとめ、実際の体験として書いてください。`;
+}
+
+// ──────────────────────────────────────────
+// コピー・リセット
+// ──────────────────────────────────────────
+function copyReview() {
+  const text = document.getElementById('review-result').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    document.getElementById('copy-success').textContent = '✓ コピーしました！Googleクチコミに貼り付けてください。';
+  }).catch(() => {
+    // フォールバック
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.getElementById('copy-success').textContent = '✓ コピーしました！';
+  });
+}
+
+function regenerate() {
+  generateReview();
+}
+
+function resetAll() {
+  // stateリセット
+  state.services = [];
+  state.gender = null;
+  state.age = null;
+  state.goodPoints = [];
+  state.recommendations = [];
+  state.changes = [];
+  state.staffImpressions = [];
+  state.freeText = "";
+  state.score = null;
+
+  // UI全リセット
+  document.querySelectorAll('.checkbox-item').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.radio-btn').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.score-btn').forEach(el => el.classList.remove('selected'));
+  document.getElementById('free-text').value = '';
+  document.getElementById('btn-step1-next').disabled = true;
+  document.getElementById('btn-step2-next').disabled = true;
+  document.getElementById('btn-generate').disabled = true;
+
+  goStep(0);
+}
+</script>
+</body>
+</html>
