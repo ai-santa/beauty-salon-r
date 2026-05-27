@@ -699,21 +699,38 @@ function buildStep3() {
 
   // 選択サービスに応じてオプションを集める
   let options = [];
-  const hasFacial = state.services.includes('facial') || state.services.includes('both');
-  const hasDepil  = state.services.includes('depilation') || state.services.includes('both');
+  const hasFacial = state.services.includes('facial');
+  const hasDepil  = state.services.includes('depilation');
+  const hasYomogi = state.services.includes('yomogi');
 
-  if (state.services.includes('both')) {
-    options = SALON_CONFIG.goodPoints.both;
+  if (hasFacial && hasDepil && hasYomogi) {
+    // 3つ全選択：各カテゴリから代表的な項目を抽出
+    const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,3);
+    const dItems = SALON_CONFIG.goodPoints.depilation.filter(x => !x.negative).slice(0,2);
+    const yItems = SALON_CONFIG.goodPoints.yomogi.filter(x => !x.negative).slice(0,2);
+    const neg = SALON_CONFIG.goodPoints.facial.find(x => x.negative);
+    options = [...fItems, ...dItems, ...yItems, neg];
   } else if (hasFacial && hasDepil) {
-    // facial + depilation 個別選択
     const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,4);
     const dItems = SALON_CONFIG.goodPoints.depilation.filter(x => !x.negative).slice(0,4);
-    const fNeg = SALON_CONFIG.goodPoints.facial.find(x => x.negative);
-    options = [...fItems, ...dItems, fNeg];
+    const neg = SALON_CONFIG.goodPoints.facial.find(x => x.negative);
+    options = [...fItems, ...dItems, neg];
+  } else if (hasFacial && hasYomogi) {
+    const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,4);
+    const yItems = SALON_CONFIG.goodPoints.yomogi.filter(x => !x.negative).slice(0,4);
+    const neg = SALON_CONFIG.goodPoints.yomogi.find(x => x.negative);
+    options = [...fItems, ...yItems, neg];
+  } else if (hasDepil && hasYomogi) {
+    const dItems = SALON_CONFIG.goodPoints.depilation.filter(x => !x.negative).slice(0,4);
+    const yItems = SALON_CONFIG.goodPoints.yomogi.filter(x => !x.negative).slice(0,4);
+    const neg = SALON_CONFIG.goodPoints.depilation.find(x => x.negative);
+    options = [...dItems, ...yItems, neg];
   } else if (hasFacial) {
     options = SALON_CONFIG.goodPoints.facial;
-  } else {
+  } else if (hasDepil) {
     options = SALON_CONFIG.goodPoints.depilation;
+  } else if (hasYomogi) {
+    options = SALON_CONFIG.goodPoints.yomogi;
   }
 
   options.forEach(s => {
@@ -880,7 +897,7 @@ function buildPrompt() {
   const allGoodPoints = [
     ...SALON_CONFIG.goodPoints.facial,
     ...SALON_CONFIG.goodPoints.depilation,
-    ...SALON_CONFIG.goodPoints.both
+    ...SALON_CONFIG.goodPoints.yomogi
   ];
   const goodPointLabels = state.goodPoints.map(id => {
     const found = allGoodPoints.find(x => x.id === id);
