@@ -22,9 +22,9 @@ const SALON_CONFIG = {
   // Q① 利用サービス（複数選択可）
   // ─────────────────────────────
   services: [
-    { id: "facial", label: "フェイシャルエステ" },
+    { id: "facial", label: "フェイシャル" },
     { id: "depilation", label: "脱毛" },
-    { id: "both", label: "フェイシャル＋脱毛（両方）" }
+    { id: "yomogi", label: "よもぎ蒸し" }
   ],
 
   // ─────────────────────────────
@@ -51,15 +51,15 @@ const SALON_CONFIG = {
       { id: "d7", label: "アフターケアの説明が丁寧だった" },
       { id: "dn", label: "予約が少し取りにくいと感じた", negative: true }
     ],
-    both: [
-      { id: "f1", label: "肌の変化を実感できた" },
-      { id: "f2", label: "施術後の肌ツヤ・透明感が上がった" },
-      { id: "f3", label: "カウンセリングで肌悩みを丁寧に聞いてくれた" },
-      { id: "d1", label: "痛みが少なく施術を受けられた" },
-      { id: "d4", label: "効果を早い段階で実感できた" },
-      { id: "f5", label: "リラックスできる雰囲気だった" },
-      { id: "d6", label: "料金プランが明確でわかりやすかった" },
-      { id: "bn", label: "一部、期待通りでない点があった", negative: true }
+    yomogi: [
+      { id: "y1", label: "体の芯から温まった" },
+      { id: "y2", label: "リラックス効果を強く感じた" },
+      { id: "y3", label: "むくみや冷えが改善された気がした" },
+      { id: "y4", label: "施術後の肌がしっとりした" },
+      { id: "y5", label: "スタッフの説明が丁寧でわかりやすかった" },
+      { id: "y6", label: "初めてでも安心して受けられた" },
+      { id: "y7", label: "料金・プランがわかりやすかった" },
+      { id: "yn", label: "効果を実感するまで少し時間がかかった", negative: true }
     ]
   },
 
@@ -74,6 +74,7 @@ const SALON_CONFIG = {
     { id: "r5", label: "リラックスしながら美容ケアしたい方" },
     { id: "r6", label: "忙しくて効率よくケアしたい方" },
     { id: "r7", label: "長期的に肌や毛の悩みを解決したい方" },
+    { id: "r8", label: "エステが初めての方" },
     { id: "rn", label: "特定の方へのおすすめは思い浮かばなかった", negative: true }
   ],
 
@@ -88,6 +89,7 @@ const SALON_CONFIG = {
     { id: "c5", label: "気になっていた肌悩みが解消された" },
     { id: "c6", label: "また通いたいと思った" },
     { id: "c7", label: "スタッフへの信頼感が生まれた" },
+    { id: "c8", label: "睡眠の質があがった" },
     { id: "cn", label: "期待していたほどの変化はまだ感じていない", negative: true }
   ],
 
