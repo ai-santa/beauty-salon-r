@@ -454,6 +454,15 @@
         <div class="radio-btn" data-val="50s" onclick="selectRadio('age','50s',this)">50代以上</div>
       </div>
     </div>
+    <div>
+      <div class="sub-label">クチコミの雰囲気（お好みで）</div>
+      <div class="radio-group" id="mood-group">
+        <div class="radio-btn selected" onclick="selectMood('auto',this)">おまかせ</div>
+        <div class="radio-btn" onclick="selectMood('bright',this)">明るくノリよく</div>
+        <div class="radio-btn" onclick="selectMood('calm',this)">落ち着いて丁寧に</div>
+        <div class="radio-btn" onclick="selectMood('short',this)">短めでサクッと</div>
+      </div>
+    </div>
   </div>
   <div class="mt-16">
     <button class="btn btn-primary" id="btn-step2-next" onclick="goStep(3)" disabled>次へ</button>
@@ -593,6 +602,7 @@ const state = {
   services: [],
   gender: null,
   age: null,
+  mood: 'auto',
   goodPoints: [],
   recommendations: [],
   changes: [],
@@ -689,6 +699,12 @@ function checkStep2() {
   document.getElementById('btn-step2-next').disabled = !(state.gender && state.age);
 }
 
+function selectMood(val, el) {
+  document.querySelectorAll('#mood-group .radio-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  state.mood = val;
+}
+
 // ──────────────────────────────────────────
 // Q③ 良かった点（サービス別動的生成）
 // ──────────────────────────────────────────
@@ -700,35 +716,35 @@ function buildStep3() {
   // 選択サービスに応じてオプションを集める
   let options = [];
   const hasFacial = state.services.includes('facial');
-  const hasDepil  = state.services.includes('depilation');
+  const hasHeadspa = state.services.includes('headspa');
   const hasYomogi = state.services.includes('yomogi');
 
-  if (hasFacial && hasDepil && hasYomogi) {
+  if (hasFacial && hasHeadspa && hasYomogi) {
     // 3つ全選択：各カテゴリから代表的な項目を抽出
     const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,3);
-    const dItems = SALON_CONFIG.goodPoints.depilation.filter(x => !x.negative).slice(0,2);
+    const hItems = SALON_CONFIG.goodPoints.headspa.filter(x => !x.negative).slice(0,2);
     const yItems = SALON_CONFIG.goodPoints.yomogi.filter(x => !x.negative).slice(0,2);
     const neg = SALON_CONFIG.goodPoints.facial.find(x => x.negative);
-    options = [...fItems, ...dItems, ...yItems, neg];
-  } else if (hasFacial && hasDepil) {
+    options = [...fItems, ...hItems, ...yItems, neg];
+  } else if (hasFacial && hasHeadspa) {
     const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,4);
-    const dItems = SALON_CONFIG.goodPoints.depilation.filter(x => !x.negative).slice(0,4);
+    const hItems = SALON_CONFIG.goodPoints.headspa.filter(x => !x.negative).slice(0,4);
     const neg = SALON_CONFIG.goodPoints.facial.find(x => x.negative);
-    options = [...fItems, ...dItems, neg];
+    options = [...fItems, ...hItems, neg];
   } else if (hasFacial && hasYomogi) {
     const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,4);
     const yItems = SALON_CONFIG.goodPoints.yomogi.filter(x => !x.negative).slice(0,4);
     const neg = SALON_CONFIG.goodPoints.yomogi.find(x => x.negative);
     options = [...fItems, ...yItems, neg];
-  } else if (hasDepil && hasYomogi) {
-    const dItems = SALON_CONFIG.goodPoints.depilation.filter(x => !x.negative).slice(0,4);
+  } else if (hasHeadspa && hasYomogi) {
+    const hItems = SALON_CONFIG.goodPoints.headspa.filter(x => !x.negative).slice(0,4);
     const yItems = SALON_CONFIG.goodPoints.yomogi.filter(x => !x.negative).slice(0,4);
-    const neg = SALON_CONFIG.goodPoints.depilation.find(x => x.negative);
-    options = [...dItems, ...yItems, neg];
+    const neg = SALON_CONFIG.goodPoints.headspa.find(x => x.negative);
+    options = [...hItems, ...yItems, neg];
   } else if (hasFacial) {
     options = SALON_CONFIG.goodPoints.facial;
-  } else if (hasDepil) {
-    options = SALON_CONFIG.goodPoints.depilation;
+  } else if (hasHeadspa) {
+    options = SALON_CONFIG.goodPoints.headspa;
   } else if (hasYomogi) {
     options = SALON_CONFIG.goodPoints.yomogi;
   }
@@ -841,50 +857,190 @@ async function generateReview() {
   }
 }
 
+// ===== 人間化エンジン ここから（humanize-engine v1） =====
+// 目的：クチコミが溜まったとき「同じ人が書いたような文章」にならないようにする。
+// 仕組み：生成のたびに JavaScript の乱数で「隠しペルソナ」（声・構成・クセ・絵文字・
+// 長さ・MEOキーワードの有無）を抽選し、AIへの指示を毎回変える。
+// AIに「毎回変えて」と頼むだけでは必ず同じ文体に収束するため、プログラム側で強制的にバラす。
+
+function hPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function hPickW(items) {
+  const total = items.reduce((s, x) => s + x.w, 0);
+  let r = Math.random() * total;
+  for (const x of items) { r -= x.w; if (r < 0) return x; }
+  return items[items.length - 1];
+}
+function hShuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+const HUMANIZE = {
+  // 声（口調カード）。casual: 0=きちんと 1=ふつう 2=くだけ気味
+  voices: {
+    female: [
+      { desc: '友達に話すようなくだけた素直な口調。「〜だった！」「ほんとに」「すごく」など体温のある言葉を使う', casual: 2 },
+      { desc: 'やわらかく温かみのある口調。丁寧だが堅苦しくなく、感じたことを素直に書く', casual: 1 },
+      { desc: '日記のような、思ったことをそのまま書く口調。文は短めで飾らない', casual: 2 },
+      { desc: 'きちんとした丁寧語。ただし固くなりすぎず、具体的な場面の描写で気持ちを伝える', casual: 0 },
+      { desc: '感動が伝わるテンション高めの口調。勢いがあって感嘆が多い', casual: 2 },
+    ],
+    male: [
+      { desc: '率直で短めの文を積み重ねる口調。飾らず思ったことをそのまま書く', casual: 2 },
+      { desc: '誠実で落ち着いた丁寧語。淡々としているが信頼感がある', casual: 0 },
+      { desc: '実用レビュー風。事実や具体的な情報を中心に書き、感想は最後に少しだけ', casual: 1 },
+      { desc: '基本は淡々としているが、最後に一言だけ本音の感想がこぼれる口調', casual: 1 },
+      { desc: 'やや熱っぽく語る口調。良かった点を具体的に力を込めて書く', casual: 2 },
+    ],
+    other: [
+      { desc: '自然で読みやすい丁寧語。飾らない', casual: 0 },
+      { desc: '少しくだけた話し言葉寄りの文体', casual: 1 },
+      { desc: '実用レビュー風。情報中心で簡潔', casual: 1 },
+    ],
+  },
+  // 書き出し・構成のパターン。毎回同じ起承転結にならないようにする
+  structures: [
+    '最初の一文で総合的な感想を言い切ってから、その理由を書く',
+    '利用したきっかけや背景の説明から書き始める',
+    'スタッフ・担当者の話から書き始める',
+    '一番印象に残ったことひとつだけを深く書き、他のことはほとんど書かない',
+    '利用する前の自分（または以前の状態）と比べる形で書く',
+    '最初は少し迷い・不安があったという話から入り、実際どうだったかにつなげる',
+    '印象的だった具体的な場面・エピソードの描写から入る',
+    '淡々と事実を並べる実用レビュー風にまとめ、感情表現は最後に少しだけ',
+  ],
+  // 表現のクセ（0〜2個抽選）。下品・誤字はNGの範囲で「崩し」を作る
+  quirks: [
+    { t: '「！」を2〜4回使う', exciteOnly: true },
+    { t: '体言止めの文を1〜2回入れる' },
+    { t: '一文だけ10文字以内のとても短い文を入れる' },
+    { t: 'かっこ書きの補足（例：「（初めてだったので）」）を1回使う' },
+    { t: '文末が「〜かな。」「〜かも。」の文を1つ入れる', exciteOnly: true },
+    { t: '句読点をやや少なめにした、ひと息で読ませる文を1つ混ぜる' },
+  ],
+};
+
+function hEmojiRule(gender, casual) {
+  if (casual === 0) return '絵文字は使わない';
+  const base = gender === 'female'
+    ? [{ w: 20, r: '絵文字は使わない' }, { w: 35, r: '絵文字を1個だけ自然な位置に使う' }, { w: 30, r: '絵文字を2〜3個、離れた場所に散らして使う' }, { w: 15, r: '絵文字を文章の一番最後にだけ1〜2個置く' }]
+    : gender === 'male'
+      ? [{ w: 60, r: '絵文字は使わない' }, { w: 30, r: '絵文字を1個だけ使う' }, { w: 10, r: '絵文字を文章の一番最後にだけ1個置く' }]
+      : [{ w: 80, r: '絵文字は使わない' }, { w: 20, r: '絵文字を1個だけ使う' }];
+  return hPickW(base).r + '。絵文字の後で無理に改行しない';
+}
+
+// 長さ：150〜300文字の範囲内で、満足度と連動させつつ帯を分けて抽選する。
+// 同じ長さに揃うと作られた感になるため、範囲内でもバラす（ユーザー方針：150〜300字厳守）。
+function hLengthRule(score, mood) {
+  if (mood === 'short') return hPick(['150〜180文字', '150〜200文字']);
+  const bands = score >= 9
+    ? [{ w: 25, r: '150〜200文字' }, { w: 40, r: '200〜250文字' }, { w: 35, r: '250〜300文字' }]
+    : score >= 7
+      ? [{ w: 35, r: '150〜200文字' }, { w: 40, r: '190〜240文字' }, { w: 25, r: '240〜290文字' }]
+      : [{ w: 50, r: '150〜190文字' }, { w: 35, r: '180〜230文字' }, { w: 15, r: '230〜270文字' }];
+  return hPickW(bands).r;
+}
+
+// MEOキーワード：全件に同じ形で入ると「指紋」になるため、入れる個数と種類を毎回変える。
+// 8割の確率で1〜2個入れる（どれを入れるかは毎回抽選・表記ゆれOK）。2割は入れない。
+function hKeywordRule() {
+  const kws = (SALON_CONFIG.meoKeywords || []);
+  if (!kws.length || Math.random() < 0.2) return '特定のキーワードを入れる必要はない。地名やサービス名を無理に入れないこと';
+  const n = (kws.length >= 2 && Math.random() < 0.45) ? 2 : 1;
+  const picked = hShuffle(kws).slice(0, n);
+  return '「' + picked.join('」「') + '」という言葉をそれぞれ1回だけ、流れを壊さない自然な形で入れる。表記は少し変えてもよい（例：「福井駅前」→「福井駅の近く」のような自然な言い換え）。これ以外のキーワードは意識して入れない';
+}
+
+// 中心に書く点の抽選：選択項目を全部盛り込むと「まんべんなく褒めるパンフレット」になる。
+// 1〜2点に絞って深く書かせる（ネガティブ項目は中心にしない）。
+function hFocus() {
+  const allGood = Object.values(SALON_CONFIG.goodPoints).flat();
+  const cands = [];
+  state.goodPoints.forEach(id => { const x = allGood.find(o => o.id === id); if (x && !x.negative) cands.push(x.label); });
+  state.changes.forEach(id => { const x = SALON_CONFIG.changes.find(o => o.id === id); if (x && !x.negative) cands.push(x.label); });
+  state.staffImpressions.forEach(id => { const x = SALON_CONFIG.staffImpressions.find(o => o.id === id); if (x && !x.negative) cands.push(x.label); });
+  if (!cands.length) return [];
+  const n = Math.min(cands.length, Math.random() < 0.5 ? 1 : 2);
+  return hShuffle(cands).slice(0, n);
+}
+
+function drawPersona() {
+  const mood = state.mood || 'auto';
+  let pool = HUMANIZE.voices[state.gender] || HUMANIZE.voices.other;
+  if (mood === 'bright') pool = pool.filter(v => v.casual >= 1);
+  if (mood === 'calm') pool = pool.filter(v => v.casual <= 1);
+  if (!pool.length) pool = HUMANIZE.voices[state.gender] || HUMANIZE.voices.other;
+  const voice = hPick(pool);
+  const structure = (mood === 'short')
+    ? hPick(['一番印象に残ったことひとつだけを短く書く', '淡々と事実を1〜2個書いて、短い感想で締める'])
+    : hPick(HUMANIZE.structures);
+  let quirkPool = HUMANIZE.quirks;
+  if (mood === 'calm' || voice.casual === 0) quirkPool = quirkPool.filter(q => !q.exciteOnly);
+  const quirks = hShuffle(quirkPool).slice(0, Math.floor(Math.random() * 3)).map(q => q.t);
+  return {
+    voice: voice,
+    structure: structure,
+    quirks: quirks,
+    emojiRule: hEmojiRule(state.gender, voice.casual),
+    lengthRule: hLengthRule(state.score, mood),
+    keywordRule: hKeywordRule(),
+    focus: hFocus(),
+  };
+}
+
 function buildSystemPrompt() {
-  return `あなたはGoogleクチコミの文章を自然に書くアシスタントです。
-以下のルールを厳守してください。
+  const p = drawPersona();
+  const genderText = { female: '女性', male: '男性', other: '性別未回答' }[state.gender] || '性別未回答';
+  const ageText = { '20s': '20代以下', '30s': '30代', '40s': '40代', '50s': '50代以上' }[state.age] || '';
+  const quirkText = p.quirks.length ? p.quirks.map(q => '・' + q).join('\n') : '・特になし。素直に書く';
+  const focusText = p.focus.length
+    ? '中心に書くのは「' + p.focus.join('」「') + '」。それ以外の項目は軽く触れる程度にするか、流れに合わなければ書かなくてよい'
+    : '選ばれた項目の中から1〜2点だけを選んで中心に書く';
 
-【文体ルール（性別・年代別）】
-・女性20代以下：友達感覚・元気・若い表現
-・女性30代：親しみやすく温かみのある表現
-・女性40代：丁寧で経験の深さが感じられる表現
-・女性50代以上：穏やか・落ち着いた大人の表現
-・男性20代以下：率直・短め・若い男性らしい表現
-・男性30代：端的・具体的な表現
-・男性40代：誠実・信頼感のある表現
-・男性50代以上：簡潔・格調・重みのある表現
-・未回答：自然で読みやすい表現
+  return `あなたはGoogleクチコミの文章を書くアシスタントです。実在のお客様のアンケート回答をもとに、その人が自分で書いたとしか思えない自然な文章を作ります。
 
-【文字数ルール】
-・満足度10：約400文字
-・満足度9：約300文字
-・満足度8以下：約200文字
+【今回の書き手の人物像】
+・${genderText}・${ageText}
+・口調：${p.voice.desc}
+・年代や性別らしさは、にじむ程度でよい。わざとらしく強調しない
 
-【絵文字ルール】
-・女性：絵文字を1〜5個使用（ランダムに自然な箇所へ）
-・男性：絵文字を0〜1個使用
-・未回答：絵文字なし
-・絵文字の直後は必ず改行する
+【文章の構成】
+・${p.structure}
+・アンケートで選ばれた項目をすべて盛り込まないこと。${focusText}
 
-【禁止事項】
-・「**」「""」などのAI的な記号は使用禁止
-・箇条書き・見出し禁止（普通の会話文のみ）
-・「スタッフの皆様」「貴店」などの過度な敬語禁止
-・AIが書いたと分かるような文体禁止
+【長さ】
+・${p.lengthRule}（多少前後してよいが、150文字未満・300文字超えにはしない）
 
-【ネガティブ対応】
-・ネガティブな内容が含まれる場合、「でも全体的には満足した」「次回は改善されることを期待したい」などのフォローを自然に添える
+【表現のクセ（不自然にならない範囲で混ぜる）】
+${quirkText}
 
-【MEOキーワード】
-以下のキーワードを文章の流れを壊さない範囲で自然に盛り込む：
-${SALON_CONFIG.meoKeywords.join('、')}
+【絵文字】
+・${p.emojiRule}
 
-【追加指示】
+【キーワード】
+・${p.keywordRule}
+
+【人間らしさのルール（最重要）】
+・アンケートの選択肢の文言をそのまま使わず、必ず自分の言葉に言い換える（例：「スタッフの対応が丁寧」→「担当してくれた方がとても親切で」など）
+・「大変満足しました」「また利用させていただきます」「〜させていただきました」のような、誰でも書きそうな定型文を使わない。締めの一文も毎回ちがう自然な終わり方にする
+・文章は上手すぎなくてよい。構成が多少不器用でも、実際の人が書いた温度感を優先する
+・「**」「""」などの記号、箇条書き、見出しは使わない。ふつうの文章のみ
+・「スタッフの皆様」「貴店」などの過度にかしこまった敬語は使わない
+
+【ネガティブな回答が含まれる場合】
+・隠さずに軽く触れたうえで、「それでも全体としては満足している」という本音の流れで自然にフォローする
+
+【自由記述がある場合】
+・本人の生の言葉なので最優先で反映し、言い回しもできるだけ活かす
+
+【店舗からの補足】
 ${SALON_CONFIG.promptNote}
 
-クチコミ文章のみを出力し、前置きや説明は一切不要です。`;
+クチコミ本文だけを出力する。前置き・説明・タイトルは不要。`;
 }
+// ===== 人間化エンジン ここまで =====
 
 function buildPrompt() {
   // サービス名を取得
@@ -896,7 +1052,7 @@ function buildPrompt() {
   // 良かった点のラベルを取得
   const allGoodPoints = [
     ...SALON_CONFIG.goodPoints.facial,
-    ...SALON_CONFIG.goodPoints.depilation,
+    ...SALON_CONFIG.goodPoints.headspa,
     ...SALON_CONFIG.goodPoints.yomogi
   ];
   const goodPointLabels = state.goodPoints.map(id => {
@@ -993,10 +1149,13 @@ function resetAll() {
   state.staffImpressions = [];
   state.freeText = "";
   state.score = null;
+  state.mood = 'auto';
 
   // UI全リセット
   document.querySelectorAll('.checkbox-item').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.radio-btn').forEach(el => el.classList.remove('selected'));
+  const moodFirst = document.querySelector('#mood-group .radio-btn');
+  if (moodFirst) moodFirst.classList.add('selected');
   document.querySelectorAll('.score-btn').forEach(el => el.classList.remove('selected'));
   document.getElementById('free-text').value = '';
   document.getElementById('btn-step1-next').disabled = true;
