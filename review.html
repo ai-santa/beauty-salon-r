@@ -9,8 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --rose:    #c8927a;
-      --rose-lt: #e8c4b8;
+      --navy:    #c8927a;
+      --blue:    #c8927a;
+      --blue-lt: #e8c4b8;
       --cream:   #fdf8f5;
       --warm:    #f5ede8;
       --dark:    #2d2420;
@@ -33,26 +34,39 @@
       align-items: center;
     }
 
+    /* ── 背景透かし（config.jsの backgroundImage で指定） ── */
+    #bg-watermark {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: 320px auto;
+      opacity: 0;            /* config未指定なら見えない */
+      pointer-events: none;
+    }
+    body > *:not(#bg-watermark) { position: relative; z-index: 1; }
+
     /* ── ヘッダー ── */
     .header {
       width: 100%;
-      background: var(--white);
-      border-bottom: 1px solid var(--rose-lt);
+      background: var(--navy);
       text-align: center;
       padding: 20px 16px 16px;
     }
     .header-logo {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 300;
-      letter-spacing: 0.15em;
-      color: var(--rose);
+      letter-spacing: 0.2em;
+      color: var(--white);
       display: block;
+      text-transform: uppercase;
     }
     .header-sub {
       font-size: 10px;
       letter-spacing: 0.2em;
-      color: var(--light);
+      color: var(--blue-lt);
       margin-top: 4px;
       text-transform: uppercase;
     }
@@ -65,13 +79,13 @@
     }
     .progress-bar {
       height: 3px;
-      background: var(--rose-lt);
+      background: var(--blue-lt);
       border-radius: 2px;
       overflow: hidden;
     }
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--rose), #e8a090);
+      background: linear-gradient(90deg, var(--blue), #5a9fd4);
       border-radius: 2px;
       transition: width 0.5s ease;
     }
@@ -100,16 +114,12 @@
     }
 
     /* ── ウェルカム画面 ── */
-    .welcome-icon {
-      font-size: 40px;
-      text-align: center;
-      margin-bottom: 16px;
-    }
+    .welcome-icon { font-size: 40px; text-align: center; margin-bottom: 16px; }
     .welcome-title {
       font-family: 'Cormorant Garamond', serif;
       font-size: 20px;
       font-weight: 300;
-      color: var(--rose);
+      color: var(--blue);
       text-align: center;
       letter-spacing: 0.08em;
       line-height: 1.6;
@@ -137,7 +147,7 @@
     .step-label {
       font-size: 10px;
       letter-spacing: 0.2em;
-      color: var(--rose);
+      color: var(--blue);
       text-transform: uppercase;
       margin-bottom: 8px;
     }
@@ -154,49 +164,50 @@
       margin-bottom: 20px;
     }
 
-    /* ── チェックボックス選択肢 ── */
+    /* ── チェックボックス ── */
     .checkbox-group { display: flex; flex-direction: column; gap: 10px; }
     .checkbox-item {
       display: flex;
       align-items: center;
       gap: 12px;
       padding: 13px 16px;
-      border: 1.5px solid var(--rose-lt);
+      border: 1.5px solid var(--blue-lt);
       border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s;
-      font-size: 14px;
+      font-size: 13.5px;
       color: var(--dark);
       user-select: none;
+      line-height: 1.5;
     }
     .checkbox-item:hover { background: var(--warm); }
     .checkbox-item.selected {
       background: var(--warm);
-      border-color: var(--rose);
-      color: var(--rose);
+      border-color: var(--blue);
+      color: var(--blue);
       font-weight: 500;
     }
     .checkbox-item.negative { color: var(--neg); border-color: #ecc; }
     .checkbox-item.negative.selected { background: #fff0ee; border-color: var(--neg); }
     .checkbox-box {
       width: 20px; height: 20px;
-      border: 2px solid var(--rose-lt);
+      border: 2px solid var(--blue-lt);
       border-radius: 4px;
       flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       transition: all 0.2s;
     }
-    .checkbox-item.selected .checkbox-box { background: var(--rose); border-color: var(--rose); }
+    .checkbox-item.selected .checkbox-box { background: var(--blue); border-color: var(--blue); }
     .checkbox-item.negative.selected .checkbox-box { background: var(--neg); border-color: var(--neg); }
     .check-mark { color: white; font-size: 12px; display: none; }
     .checkbox-item.selected .check-mark { display: block; }
 
-    /* ── ラジオボタン式ボタン ── */
+    /* ── ラジオボタン ── */
     .radio-group { display: flex; flex-wrap: wrap; gap: 10px; }
     .radio-btn {
       flex: 1; min-width: 80px;
       padding: 11px 8px;
-      border: 1.5px solid var(--rose-lt);
+      border: 1.5px solid var(--blue-lt);
       border-radius: 10px;
       text-align: center;
       cursor: pointer;
@@ -207,40 +218,16 @@
     }
     .radio-btn:hover { background: var(--warm); }
     .radio-btn.selected {
-      background: var(--rose);
-      border-color: var(--rose);
+      background: var(--blue);
+      border-color: var(--blue);
       color: white;
       font-weight: 500;
-    }
-
-    /* ── 満足度ボタン ── */
-    .score-group { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-    .score-btn {
-      width: calc(20% - 8px);
-      aspect-ratio: 1;
-      border: 1.5px solid var(--rose-lt);
-      border-radius: 10px;
-      text-align: center;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--mid);
-      transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center;
-      user-select: none;
-    }
-    .score-btn:hover { background: var(--warm); }
-    .score-btn.selected { background: var(--rose); border-color: var(--rose); color: white; }
-    .score-labels {
-      display: flex; justify-content: space-between;
-      font-size: 11px; color: var(--light);
-      margin-top: 8px; padding: 0 4px;
     }
 
     /* ── テキストエリア ── */
     textarea {
       width: 100%;
-      border: 1.5px solid var(--rose-lt);
+      border: 1.5px solid var(--blue-lt);
       border-radius: 10px;
       padding: 14px 16px;
       font-family: 'Noto Sans JP', sans-serif;
@@ -252,7 +239,7 @@
       transition: border-color 0.2s;
       background: var(--white);
     }
-    textarea:focus { border-color: var(--rose); }
+    textarea:focus { border-color: var(--blue); }
     textarea::placeholder { color: var(--light); }
 
     /* ── ボタン ── */
@@ -270,22 +257,22 @@
       transition: all 0.2s;
     }
     .btn-primary {
-      background: linear-gradient(135deg, var(--rose), #e0a090);
+      background: linear-gradient(135deg, var(--navy), var(--blue));
       color: white;
-      box-shadow: 0 4px 16px rgba(200,146,122,0.35);
+      box-shadow: 0 4px 16px rgba(45,106,159,0.35);
     }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,146,122,0.45); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(45,106,159,0.45); }
     .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     .btn-secondary {
       background: var(--warm);
       color: var(--mid);
       margin-top: 10px;
     }
-    .btn-secondary:hover { background: var(--rose-lt); }
+    .btn-secondary:hover { background: var(--blue-lt); }
     .btn-outline {
       background: transparent;
-      border: 1.5px solid var(--rose);
-      color: var(--rose);
+      border: 1.5px solid var(--blue);
+      color: var(--blue);
       margin-top: 10px;
     }
     .btn-outline:hover { background: var(--warm); }
@@ -310,7 +297,7 @@
     .loading-title {
       font-family: 'Cormorant Garamond', serif;
       font-size: 18px; font-weight: 300;
-      color: var(--rose); margin: 16px 0 8px;
+      color: var(--blue); margin: 16px 0 8px;
       letter-spacing: 0.08em;
     }
     .loading-sub { font-size: 12px; color: var(--light); }
@@ -320,7 +307,7 @@
       font-size: 11.5px;
       color: var(--mid);
       background: var(--warm);
-      border-left: 3px solid var(--rose-lt);
+      border-left: 3px solid var(--blue-lt);
       padding: 12px 14px;
       border-radius: 0 8px 8px 0;
       line-height: 1.8;
@@ -328,7 +315,7 @@
     }
     .review-box {
       background: var(--cream);
-      border: 1px solid var(--rose-lt);
+      border: 1px solid var(--blue-lt);
       border-radius: 10px;
       padding: 18px;
       font-size: 14.5px;
@@ -341,7 +328,7 @@
     .paste-area {
       width: 100%;
       min-height: 80px;
-      border: 1.5px dashed var(--rose-lt);
+      border: 1.5px dashed var(--blue-lt);
       border-radius: 10px;
       padding: 14px 16px;
       font-family: 'Noto Sans JP', sans-serif;
@@ -352,11 +339,8 @@
       outline: none;
       margin-bottom: 8px;
     }
-    .paste-area:focus { border-color: var(--rose); }
-    .paste-label {
-      font-size: 12px; color: var(--light);
-      margin-bottom: 6px; text-align: center;
-    }
+    .paste-area:focus { border-color: var(--blue); }
+    .paste-label { font-size: 12px; color: var(--light); margin-bottom: 6px; text-align: center; }
 
     /* ── ページ表示制御 ── */
     .step { display: none; }
@@ -364,48 +348,35 @@
 
     /* ── ユーティリティ ── */
     .mt-16 { margin-top: 16px; }
-    .text-center { text-align: center; }
-    .divider {
-      height: 1px; background: var(--rose-lt);
-      margin: 20px 0;
-    }
+    .divider { height: 1px; background: var(--blue-lt); margin: 20px 0; }
     .result-title {
       font-family: 'Cormorant Garamond', serif;
       font-size: 18px; font-weight: 300;
-      color: var(--rose); text-align: center;
+      color: var(--blue); text-align: center;
       letter-spacing: 0.1em; margin-bottom: 16px;
     }
-    .copy-success {
-      text-align: center; font-size: 13px;
-      color: #27ae60; margin-top: 8px;
-      min-height: 20px;
-    }
-
-    /* ── 性別年代 グリッド ── */
+    .copy-success { text-align: center; font-size: 13px; color: #27ae60; margin-top: 8px; min-height: 20px; }
     .gender-age-wrap { display: flex; flex-direction: column; gap: 20px; }
     .sub-label { font-size: 12px; color: var(--mid); font-weight: 500; margin-bottom: 8px; }
   </style>
 </head>
 <body>
+<div id="bg-watermark" aria-hidden="true"></div>
 
-<!-- ヘッダー -->
 <div class="header">
-  <span class="header-logo" id="header-salon-name">Beauty salon R</span>
+  <span class="header-logo" id="header-salon-name">店舗名</span>
   <span class="header-sub">Google Review Assistant</span>
 </div>
 
-<!-- プログレスバー -->
 <div class="progress-wrap" id="progress-wrap" style="display:none;">
   <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
   <div class="progress-text" id="progress-text"></div>
 </div>
 
-<!-- ============================================================ -->
 <!-- STEP 0: ウェルカム -->
-<!-- ============================================================ -->
 <div class="card step active" id="step-0">
-  <div class="welcome-icon">✨</div>
-  <div class="welcome-title" id="welcome-title">いつもありがとうございます</div>
+  <div class="welcome-icon" id="welcome-icon">🙏</div>
+  <div class="welcome-title" id="welcome-title">ありがとうございます</div>
   <div class="welcome-body" id="welcome-body"></div>
   <div class="welcome-note">
     所要時間：約2〜3分<br>
@@ -415,58 +386,52 @@
   <button class="btn btn-primary" onclick="goStep(1)">はじめる</button>
 </div>
 
-<!-- ============================================================ -->
-<!-- STEP 1: Q① 利用サービス -->
-<!-- ============================================================ -->
+<!-- STEP 1: Q① ペルソナ（性別・年代） -->
 <div class="card step" id="step-1">
-  <div class="step-label">Q 1 / 8</div>
-  <div class="question-title">本日ご利用いただいたサービスを<br>教えてください</div>
-  <div class="question-sub">複数選択できます</div>
-  <div class="checkbox-group" id="service-group"></div>
-  <div class="mt-16">
-    <button class="btn btn-primary" id="btn-step1-next" onclick="goStep(2)" disabled>次へ</button>
-    <button class="btn btn-secondary" onclick="goStep(0)">戻る</button>
-  </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- STEP 2: Q② 性別・年代 -->
-<!-- ============================================================ -->
-<div class="card step" id="step-2">
-  <div class="step-label">Q 2 / 8</div>
+  <div class="step-label">Q 1 / 7</div>
   <div class="question-title">性別と年代を教えてください</div>
   <div class="question-sub">クチコミの文体に反映されます</div>
   <div class="gender-age-wrap">
     <div>
       <div class="sub-label">性別</div>
       <div class="radio-group" id="gender-group">
-        <div class="radio-btn" data-val="female" onclick="selectRadio('gender','female',this)">女性</div>
-        <div class="radio-btn" data-val="male" onclick="selectRadio('gender','male',this)">男性</div>
-        <div class="radio-btn" data-val="other" onclick="selectRadio('gender','other',this)">未回答</div>
+        <div class="radio-btn" onclick="selectRadio('gender','female',this)">女性</div>
+        <div class="radio-btn" onclick="selectRadio('gender','male',this)">男性</div>
+        <div class="radio-btn" onclick="selectRadio('gender','other',this)">未回答</div>
       </div>
     </div>
     <div>
       <div class="sub-label">年代</div>
       <div class="radio-group" id="age-group">
-        <div class="radio-btn" data-val="20s" onclick="selectRadio('age','20s',this)">20代以下</div>
-        <div class="radio-btn" data-val="30s" onclick="selectRadio('age','30s',this)">30代</div>
-        <div class="radio-btn" data-val="40s" onclick="selectRadio('age','40s',this)">40代</div>
-        <div class="radio-btn" data-val="50s" onclick="selectRadio('age','50s',this)">50代以上</div>
+        <div class="radio-btn" onclick="selectRadio('age','20s',this)">20代以下</div>
+        <div class="radio-btn" onclick="selectRadio('age','30s',this)">30代</div>
+        <div class="radio-btn" onclick="selectRadio('age','40s',this)">40代</div>
+        <div class="radio-btn" onclick="selectRadio('age','50s',this)">50代以上</div>
       </div>
     </div>
   </div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-step1-next" onclick="goStep(2)" disabled>次へ</button>
+    <button class="btn btn-secondary" onclick="goStep(0)">戻る</button>
+  </div>
+</div>
+
+<!-- STEP 2: Q② 利用サービス -->
+<div class="card step" id="step-2">
+  <div class="step-label">Q 2 / 7</div>
+  <div class="question-title">ご利用いただいた商品・サービスを<br>教えてください</div>
+  <div class="question-sub">複数選択できます</div>
+  <div class="checkbox-group" id="service-group"></div>
   <div class="mt-16">
     <button class="btn btn-primary" id="btn-step2-next" onclick="goStep(3)" disabled>次へ</button>
     <button class="btn btn-secondary" onclick="goStep(1)">戻る</button>
   </div>
 </div>
 
-<!-- ============================================================ -->
 <!-- STEP 3: Q③ 良かった点 -->
-<!-- ============================================================ -->
 <div class="card step" id="step-3">
-  <div class="step-label">Q 3 / 8</div>
-  <div class="question-title">サービスで良かった点を<br>教えてください</div>
+  <div class="step-label">Q 3 / 7</div>
+  <div class="question-title">良かった点を<br>教えてください</div>
   <div class="question-sub">複数選択できます</div>
   <div class="checkbox-group" id="good-points-group"></div>
   <div class="mt-16">
@@ -475,11 +440,9 @@
   </div>
 </div>
 
-<!-- ============================================================ -->
 <!-- STEP 4: Q④ おすすめしたい方 -->
-<!-- ============================================================ -->
 <div class="card step" id="step-4">
-  <div class="step-label">Q 4 / 8</div>
+  <div class="step-label">Q 4 / 7</div>
   <div class="question-title">どんな方におすすめしたいですか？</div>
   <div class="question-sub">複数選択できます</div>
   <div class="checkbox-group" id="recommendation-group"></div>
@@ -489,80 +452,61 @@
   </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- STEP 5: Q⑤ 前後の変化 -->
-<!-- ============================================================ -->
+<!-- STEP 5: Q⑤ スタッフ・店内の印象 -->
 <div class="card step" id="step-5">
-  <div class="step-label">Q 5 / 8</div>
-  <div class="question-title">サービスを受けて、<br>どんな変化がありましたか？</div>
+  <div class="step-label">Q 5 / 7</div>
+  <div class="question-title">スタッフや店内の印象を<br>教えてください</div>
   <div class="question-sub">複数選択できます</div>
-  <div class="checkbox-group" id="changes-group"></div>
+  <div class="checkbox-group" id="staff-group"></div>
   <div class="mt-16">
     <button class="btn btn-primary" id="btn-step5-next" onclick="goStep(6)" disabled>次へ</button>
     <button class="btn btn-secondary" onclick="goStep(4)">戻る</button>
   </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- STEP 6: Q⑥ スタッフ・店内の印象 -->
-<!-- ============================================================ -->
+<!-- STEP 6: Q⑥ 自由コメント -->
 <div class="card step" id="step-6">
-  <div class="step-label">Q 6 / 8</div>
-  <div class="question-title">スタッフや店内の印象を<br>教えてください</div>
-  <div class="question-sub">複数選択できます</div>
-  <div class="checkbox-group" id="staff-group"></div>
-  <div class="mt-16">
-    <button class="btn btn-primary" id="btn-step6-next" onclick="goStep(7)" disabled>次へ</button>
-    <button class="btn btn-secondary" onclick="goStep(5)">戻る</button>
-  </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- STEP 7: Q⑦ 自由記述（任意） -->
-<!-- ============================================================ -->
-<div class="card step" id="step-7">
-  <div class="step-label">Q 7 / 8</div>
+  <div class="step-label">Q 6 / 7</div>
   <div class="question-title">その他、自由にお書きください</div>
   <div class="question-sub">任意・空欄でも大丈夫です</div>
   <textarea id="free-text" placeholder="良かった点・改善してほしい点など、なんでもお聞かせください"></textarea>
   <div class="mt-16">
-    <button class="btn btn-primary" onclick="goStep(8)">次へ</button>
+    <button class="btn btn-primary" onclick="goStep(7)">次へ</button>
+    <button class="btn btn-secondary" onclick="goStep(5)">戻る</button>
+  </div>
+</div>
+
+<!-- STEP 7: Q⑦ テンションの確認 -->
+<div class="card step" id="step-7">
+  <div class="step-label">Q 7 / 7</div>
+  <div class="question-title">クチコミのテンションを<br>選んでください</div>
+  <div class="question-sub">絵文字や記号の量・文章の元気さが変わります。「おまかせ」ならお店の雰囲気に合わせて自然に仕上げます</div>
+  <div class="radio-group" id="tension-group">
+    <div class="radio-btn" onclick="selectTension(1,this)">落ち着いて</div>
+    <div class="radio-btn" onclick="selectTension(2,this)">ひかえめ</div>
+    <div class="radio-btn selected" onclick="selectTension(3,this)">おまかせ</div>
+    <div class="radio-btn" onclick="selectTension(4,this)">明るめ</div>
+    <div class="radio-btn" onclick="selectTension(5,this)">元気に</div>
+  </div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-generate" onclick="generateReview()">クチコミを作成する</button>
     <button class="btn btn-secondary" onclick="goStep(6)">戻る</button>
   </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- STEP 8: Q⑧ 満足度 -->
-<!-- ============================================================ -->
+<!-- STEP 8: ローディング -->
 <div class="card step" id="step-8">
-  <div class="step-label">Q 8 / 8</div>
-  <div class="question-title">総合的なご満足度を<br>教えてください</div>
-  <div class="question-sub">10が最高・1が最低です</div>
-  <div class="score-group" id="score-group"></div>
-  <div class="score-labels"><span>← 低い</span><span>高い →</span></div>
-  <div class="mt-16">
-    <button class="btn btn-primary" id="btn-generate" onclick="generateReview()" disabled>クチコミを作成する</button>
-    <button class="btn btn-secondary" onclick="goStep(7)">戻る</button>
-  </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- STEP 9: ローディング -->
-<!-- ============================================================ -->
-<div class="card step" id="step-9">
   <div class="loading-wrap">
-    <div class="loading-icon">✦</div>
+    <div class="loading-icon">⚡</div>
     <div class="loading-title">クチコミ文章を作成中です</div>
     <div class="loading-sub">AIがあなたの体験をまとめています<br>少々お待ちください...</div>
   </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- STEP 10: 完成・結果 -->
-<!-- ============================================================ -->
-<div class="card step" id="step-10">
+<!-- STEP 9: 結果 -->
+<div class="card step" id="step-9">
   <div class="result-title">✦ クチコミが完成しました</div>
-  <div class="disclaimer" id="disclaimer">
+  <div class="disclaimer">
     この文章はお客様の実体験をもとに作成されています。<br>
     内容に誤りや気になる点がございましたら、<br>
     投稿前にご自身で修正をお願いいたします。
@@ -581,201 +525,118 @@
   <button class="btn btn-secondary" onclick="resetAll()">最初からやりなおす</button>
 </div>
 
-<!-- ============================================================
-     JavaScript
-============================================================ -->
 <script src="config.js"></script>
 <script>
-// ──────────────────────────────────────────
-// 初期化
-// ──────────────────────────────────────────
 const state = {
-  services: [],
-  gender: null,
-  age: null,
-  goodPoints: [],
-  recommendations: [],
-  changes: [],
-  staffImpressions: [],
-  freeText: "",
-  score: null
+  services: [], gender: null, age: null, tension: 3,
+  goodPoints: [], recommendations: [],
+  staffImpressions: [], freeText: ""
 };
-
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 7;
 
 window.addEventListener('DOMContentLoaded', () => {
   applyConfig();
-  buildStep1();
-  buildStep4();
-  buildStep5();
-  buildStep6();
-  buildScoreButtons();
+  buildServices();
+  buildCheckboxGroup('recommendation-group', SALON_CONFIG.recommendations, 'recommendations', 'btn-step4-next');
+  buildCheckboxGroup('staff-group', SALON_CONFIG.staffImpressions, 'staffImpressions', 'btn-step5-next');
 });
 
-// ──────────────────────────────────────────
-// config.jsの内容を画面に反映
-// ──────────────────────────────────────────
 function applyConfig() {
   document.title = SALON_CONFIG.salonName + " | クチコミ作成";
-  document.getElementById('page-title').textContent = SALON_CONFIG.salonName + " | クチコミ作成";
   document.getElementById('header-salon-name').textContent = SALON_CONFIG.salonName;
-  document.getElementById('welcome-title').textContent = "いつもありがとうございます";
   document.getElementById('welcome-body').textContent =
     SALON_CONFIG.welcomeMessage + "\n" + SALON_CONFIG.subMessage;
   document.getElementById('google-review-link').href = SALON_CONFIG.googleReviewUrl;
+  if (SALON_CONFIG.welcomeIcon) {
+    document.getElementById('welcome-icon').textContent = SALON_CONFIG.welcomeIcon;
+  }
+  if (SALON_CONFIG.backgroundImage) {
+    const bg = document.getElementById('bg-watermark');
+    bg.style.backgroundImage = 'url("' + SALON_CONFIG.backgroundImage + '")';
+    bg.style.opacity = (SALON_CONFIG.backgroundOpacity != null) ? SALON_CONFIG.backgroundOpacity : 0.06;
+    if (SALON_CONFIG.backgroundSize) bg.style.backgroundSize = SALON_CONFIG.backgroundSize;
+    if (SALON_CONFIG.backgroundRepeat) bg.style.backgroundRepeat = SALON_CONFIG.backgroundRepeat;
+  }
 }
 
-// ──────────────────────────────────────────
-// ステップ移動
-// ──────────────────────────────────────────
 function goStep(n) {
   document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
   document.getElementById('step-' + n).classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
   const pw = document.getElementById('progress-wrap');
-  if (n === 0 || n === 9 || n === 10) {
+  if (n === 0 || n === 8 || n === 9) {
     pw.style.display = 'none';
   } else {
     pw.style.display = 'block';
-    const pct = Math.round((n / TOTAL_STEPS) * 100);
-    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-fill').style.width = Math.round((n / TOTAL_STEPS) * 100) + '%';
     document.getElementById('progress-text').textContent = n + ' / ' + TOTAL_STEPS;
   }
-
-  // Q③ はサービス選択後に動的生成
   if (n === 3) buildStep3();
 }
 
-// ──────────────────────────────────────────
-// Q① サービス
-// ──────────────────────────────────────────
-function buildStep1() {
+function buildServices() {
   const g = document.getElementById('service-group');
   g.innerHTML = '';
   SALON_CONFIG.services.forEach(s => {
     const el = document.createElement('div');
     el.className = 'checkbox-item';
-    el.dataset.id = s.id;
     el.innerHTML = `<div class="checkbox-box"><span class="check-mark">✓</span></div>${s.label}`;
-    el.addEventListener('click', () => toggleService(s.id, el));
+    el.addEventListener('click', () => {
+      el.classList.toggle('selected');
+      if (el.classList.contains('selected')) { if (!state.services.includes(s.id)) state.services.push(s.id); }
+      else { state.services = state.services.filter(x => x !== s.id); }
+      document.getElementById('btn-step2-next').disabled = state.services.length === 0;
+    });
     g.appendChild(el);
   });
 }
 
-function toggleService(id, el) {
-  el.classList.toggle('selected');
-  if (el.classList.contains('selected')) {
-    if (!state.services.includes(id)) state.services.push(id);
-  } else {
-    state.services = state.services.filter(x => x !== id);
-  }
-  document.getElementById('btn-step1-next').disabled = state.services.length === 0;
-}
-
-// ──────────────────────────────────────────
-// Q② 性別・年代
-// ──────────────────────────────────────────
 function selectRadio(type, val, el) {
   const groupId = type === 'gender' ? 'gender-group' : 'age-group';
   document.querySelectorAll('#' + groupId + ' .radio-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   if (type === 'gender') state.gender = val;
   else state.age = val;
-  checkStep2();
+  document.getElementById('btn-step1-next').disabled = !(state.gender && state.age);
 }
 
-function checkStep2() {
-  document.getElementById('btn-step2-next').disabled = !(state.gender && state.age);
+function selectTension(val, el) {
+  document.querySelectorAll('#tension-group .radio-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  state.tension = val;
 }
 
-// ──────────────────────────────────────────
-// Q③ 良かった点（サービス別動的生成）
-// ──────────────────────────────────────────
 function buildStep3() {
   const g = document.getElementById('good-points-group');
   g.innerHTML = '';
   state.goodPoints = [];
-
-  // 選択サービスに応じてオプションを集める
   let options = [];
-  const hasFacial = state.services.includes('facial');
-  const hasHeadspa = state.services.includes('headspa');
-  const hasYomogi = state.services.includes('yomogi');
-
-  if (hasFacial && hasHeadspa && hasYomogi) {
-    // 3つ全選択：各カテゴリから代表的な項目を抽出
-    const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,3);
-    const hItems = SALON_CONFIG.goodPoints.headspa.filter(x => !x.negative).slice(0,2);
-    const yItems = SALON_CONFIG.goodPoints.yomogi.filter(x => !x.negative).slice(0,2);
-    const neg = SALON_CONFIG.goodPoints.facial.find(x => x.negative);
-    options = [...fItems, ...hItems, ...yItems, neg];
-  } else if (hasFacial && hasHeadspa) {
-    const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,4);
-    const hItems = SALON_CONFIG.goodPoints.headspa.filter(x => !x.negative).slice(0,4);
-    const neg = SALON_CONFIG.goodPoints.facial.find(x => x.negative);
-    options = [...fItems, ...hItems, neg];
-  } else if (hasFacial && hasYomogi) {
-    const fItems = SALON_CONFIG.goodPoints.facial.filter(x => !x.negative).slice(0,4);
-    const yItems = SALON_CONFIG.goodPoints.yomogi.filter(x => !x.negative).slice(0,4);
-    const neg = SALON_CONFIG.goodPoints.yomogi.find(x => x.negative);
-    options = [...fItems, ...yItems, neg];
-  } else if (hasHeadspa && hasYomogi) {
-    const hItems = SALON_CONFIG.goodPoints.headspa.filter(x => !x.negative).slice(0,4);
-    const yItems = SALON_CONFIG.goodPoints.yomogi.filter(x => !x.negative).slice(0,4);
-    const neg = SALON_CONFIG.goodPoints.headspa.find(x => x.negative);
-    options = [...hItems, ...yItems, neg];
-  } else if (hasFacial) {
-    options = SALON_CONFIG.goodPoints.facial;
-  } else if (hasHeadspa) {
-    options = SALON_CONFIG.goodPoints.headspa;
-  } else if (hasYomogi) {
-    options = SALON_CONFIG.goodPoints.yomogi;
+  const ids = state.services;
+  if (ids.length === 1) {
+    options = SALON_CONFIG.goodPoints[ids[0]] || [];
+  } else {
+    const allNeg = ids.map(id => (SALON_CONFIG.goodPoints[id] || []).find(x => x.negative)).filter(Boolean);
+    const allPos = ids.flatMap(id => (SALON_CONFIG.goodPoints[id] || []).filter(x => !x.negative).slice(0, 3));
+    const seen = new Set();
+    const unique = allPos.filter(x => { if (seen.has(x.id)) return false; seen.add(x.id); return true; });
+    options = [...unique, allNeg[0]].filter(Boolean);
   }
-
   options.forEach(s => {
     const el = document.createElement('div');
     el.className = 'checkbox-item' + (s.negative ? ' negative' : '');
-    el.dataset.id = s.id;
     el.innerHTML = `<div class="checkbox-box"><span class="check-mark">✓</span></div>${s.label}`;
     el.addEventListener('click', () => toggleCheck(s.id, el, 'goodPoints', 'btn-step3-next'));
     g.appendChild(el);
   });
-
   document.getElementById('btn-step3-next').disabled = true;
 }
 
-// ──────────────────────────────────────────
-// Q④ おすすめしたい方
-// ──────────────────────────────────────────
-function buildStep4() {
-  buildCheckboxGroup('recommendation-group', SALON_CONFIG.recommendations, 'recommendations', 'btn-step4-next');
-}
-
-// ──────────────────────────────────────────
-// Q⑤ 前後の変化
-// ──────────────────────────────────────────
-function buildStep5() {
-  buildCheckboxGroup('changes-group', SALON_CONFIG.changes, 'changes', 'btn-step5-next');
-}
-
-// ──────────────────────────────────────────
-// Q⑥ スタッフ・店内の印象
-// ──────────────────────────────────────────
-function buildStep6() {
-  buildCheckboxGroup('staff-group', SALON_CONFIG.staffImpressions, 'staffImpressions', 'btn-step6-next');
-}
-
-// ──────────────────────────────────────────
-// 共通チェックボックスビルダー
-// ──────────────────────────────────────────
 function buildCheckboxGroup(groupId, items, stateKey, btnId) {
   const g = document.getElementById(groupId);
   g.innerHTML = '';
   items.forEach(s => {
     const el = document.createElement('div');
     el.className = 'checkbox-item' + (s.negative ? ' negative' : '');
-    el.dataset.id = s.id;
     el.innerHTML = `<div class="checkbox-box"><span class="check-mark">✓</span></div>${s.label}`;
     el.addEventListener('click', () => toggleCheck(s.id, el, stateKey, btnId));
     g.appendChild(el);
@@ -784,154 +645,30 @@ function buildCheckboxGroup(groupId, items, stateKey, btnId) {
 
 function toggleCheck(id, el, stateKey, btnId) {
   el.classList.toggle('selected');
-  if (el.classList.contains('selected')) {
-    if (!state[stateKey].includes(id)) state[stateKey].push(id);
-  } else {
-    state[stateKey] = state[stateKey].filter(x => x !== id);
-  }
+  if (el.classList.contains('selected')) { if (!state[stateKey].includes(id)) state[stateKey].push(id); }
+  else { state[stateKey] = state[stateKey].filter(x => x !== id); }
   document.getElementById(btnId).disabled = state[stateKey].length === 0;
 }
 
-// ──────────────────────────────────────────
-// Q⑧ 満足度ボタン（10→1の降順）
-// ──────────────────────────────────────────
-function buildScoreButtons() {
-  const g = document.getElementById('score-group');
-  g.innerHTML = '';
-  for (let i = 10; i >= 1; i--) {
-    const el = document.createElement('div');
-    el.className = 'score-btn';
-    el.textContent = i;
-    el.addEventListener('click', () => {
-      document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
-      el.classList.add('selected');
-      state.score = i;
-      document.getElementById('btn-generate').disabled = false;
-    });
-    g.appendChild(el);
-  }
-}
-
-// ──────────────────────────────────────────
-// AI生成
-// ──────────────────────────────────────────
 async function generateReview() {
   state.freeText = document.getElementById('free-text').value.trim();
-  goStep(9);
-
-  const prompt = buildPrompt();
-
+  goStep(8);
   try {
     const res = await fetch('/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system: buildSystemPrompt(),
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify({ system: buildSystemPrompt(), messages: [{ role: 'user', content: buildPrompt() }] })
     });
     const data = await res.json();
-    const text = data.content?.[0]?.text || "生成に失敗しました。もう一度お試しください。";
-    document.getElementById('review-result').textContent = text;
+    document.getElementById('review-result').textContent = data.content?.[0]?.text || "生成に失敗しました。もう一度お試しください。";
     document.getElementById('copy-success').textContent = '';
-    goStep(10);
+    goStep(9);
   } catch (e) {
     document.getElementById('review-result').textContent = "通信エラーが発生しました。もう一度お試しください。";
-    goStep(10);
+    goStep(9);
   }
 }
 
-// ===== 人間化エンジン v3（実在クチコミ711件の分析準拠） =====
-// 目的：AIクチコミから「作られた感／お客様の声っぽさ」を消し、その辺の普通の人が
-// スマホでサッと書いた本物のクチコミにする。クチコミが溜まっても同一人物感が出ないよう、
-// 生成のたびに書き方（書き出し・締め・長さ・口調・絵文字）を乱数で変える。
-//
-// ユーザー確定方針：ですますベース＋常体・体言止めを2〜3割混ぜる／誤字は入れない／
-// 超短文・小さな不満・言いさしの締めは不採用（きちんと前向きに閉じる・極端に短くしない）。
-// 効かせるリアル要素：満足の前に文脈／抽象褒めを具体の数字・固有名詞へ翻訳／
-// 書き出しと締めを毎回変える／業種でトーンと絵文字量を変える／AIブラックリスト封印／
-// 本物の"手触り"をお手本例文で見せる／地名は勝手に創作させない。
-//
-// このブロックは review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-function hShuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-var HUMANIZE_PROFILES = [
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    emoji:[{w:55,r:'絵文字は使わない'},{w:25,r:'☆ ◎ (^_-) ♬ など昔ながらの顔文字・記号を1〜2個'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}],
-    tone:'フランクで気取らない。常連でも初心者でも書きそうな素朴な感じ',
-    specifics:'料金の生数字（例:110分3000円）・滞在時間・ゲーム名・時間帯・客層・立地',
-    anchors:[
-'会社の同僚に誘われて初めて行きました。ルールうろ覚えだったけど、ディーラーの方が都度教えてくれるので問題なし。ポイント制で現金のやり取りがないのも安心でした。平日の夜でもそこそこ人がいて、2時間くらいであっという間。また行きます。',
-'駅から歩いて5分くらい。初心者卓があって、そこでルール覚えました。スタッフの対応も気さくで居心地よかったです。',
-'ポーカーやってみたくてずっと気になってたお店。思い切って一人で行ってみました。最初の30分はルール説明を丁寧にしてもらえて、未経験でもちゃんと参加できました！変にガツガツした雰囲気じゃないのが良かった。'] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    emoji:[{w:35,r:'絵文字は使わない'},{w:35,r:'絵文字か顔文字を1〜3個、自然な位置に'},{w:30,r:'🎵💕(^^)などで気分を出す。単語を挟むように使ってもよい'}],
-    tone:'明るめでもOK。悩み→施術→変化の流れが出やすい',
-    specifics:'メニュー名・コース時間・料金・担当者の呼び方や外見・肌や仕上がりの具体的な変化',
-    anchors:[
-'肌のくすみが気になってて、家の近くで探して予約しました。カウンセリングで悩みをちゃんと聞いてくれて、施術中は気持ちよくて半分寝てました。終わったあと頬のあたりがワントーン明るくなってて驚き。もちもちします。',
-'毛穴のケアで通ってます。毎回丁寧だし、肌の調子いいです。担当の方が話しやすくてリラックスできる。',
-'初めてのフェイシャルで緊張してたんですが、部屋も清潔で落ち着けました。しつこい勧誘とかもなくて、また来たいなと思える感じでした。'] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    emoji:[{w:60,r:'絵文字は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}],
-    tone:'感謝と結果で語る。動機（体型・不調）から入りやすい',
-    specifics:'数字（○kg減・○cm・週○回・○ヶ月・1回○円）・部位や症状・担当者名の自然な呼び方',
-    anchors:[
-'40代になって体型が戻らなくなり、思い切って入会しました。週2で通って2ヶ月、体重は4キロ落ちて、何より姿勢が変わったのが自分でも分かります。トレーニング前に体をほぐしてくれるのが効いてる気がする。',
-'完全個室なので人目を気にせず集中できます。指導が的確。無理な食事制限もなく続けられてます。',
-'運動が続かないタイプでしたが、ここは予約が取りやすくて自分のペースでいけます。回数券に期限がないのも助かる。3ヶ月でウエスト6cm減って、周りにも痩せた?って聞かれるようになりました。'] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    emoji:[{w:80,r:'絵文字は使わない'},{w:20,r:'「！」を1回だけ、絵文字はなし'}],
-    tone:'真面目・落ち着いた大人。高額な決断ゆえ情緒的な言葉は避け、事実で語る',
-    specifics:'担当者の呼び方・相談した内容・比較した社数・期間・金額感・「もっと早く相談すればよかった」等の実感',
-    anchors:[
-'家を建てたくて、まず何から始めればいいか分からず相談に伺いました。予算のことや土地の探し方を、こちらのペースに合わせて一つずつ説明してもらえて、頭の中が整理できました。しつこい営業がないので安心して相談できます。',
-'注文住宅を検討中に利用しました。複数の会社を紹介してもらい、比較しやすかったです。中立の立場でアドバイスをもらえるのがありがたい。',
-'住宅ローンのことが不安で予約しました。担当の方が銀行の選び方から教えてくれて、初歩的な質問にも嫌な顔ひとつせず答えてもらえました。もっと早く相談すればよかったです。'] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', emoji:[{w:60,r:'絵文字は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}],
-  tone:'自然で素朴', specifics:'料金・時間・担当者の呼び方など具体的な情報',
-  anchors:['気になっていたので利用してみました。対応が丁寧で、思っていたより良かったです。また来たいと思います。'] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-var HUMANIZE_OPENINGS = [
-  '利用しようと思ったきっかけや、その時の悩み・不安から書き始める',
-  '立地やアクセス、行った時間帯など状況から書き始める',
-  '結論（全体の感想）を一言先に言ってから、理由を書く',
-  '対応してくれた人の話から書き始める',
-  '利用した内容・メニュー・頼んだものから書き始める',
-];
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  '体言止めで締める',
-  'これからの予定や期待をひとこと添えて締める',
-  '事実や感想をひとつ置いて、あっさり終える',
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var lengthBands = [{w:35,r:'90〜140文字'},{w:40,r:'150〜220文字'},{w:25,r:'230〜320文字'}];
-  return {
-    prof: prof,
-    opening: hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    taiMix: hPick([
-      'ベースはですます。ただし2〜3割の文を常体（〜だった。〜と思う。）や体言止め（〜が印象的。）にして、単調さをなくす',
-      'ですますを基本にしつつ、ところどころ体言止めや短い言い切りを混ぜる',
-      'ですますが中心。1〜2文だけ常体をさりげなく混ぜる',
-    ]),
-  };
-}
-
 // ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
 // 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
 // クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
@@ -953,411 +690,43 @@ function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=
 // 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
 // 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
 var HUMANIZE_PROFILES = [
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+  // tone=業種の口調。palette=この業種で使う顔文字・記号（テンションが高い時の見本）。
+  // emoji=テンション「おまかせ(3)」のときの自然な量（実データ準拠）の抽選。
+  { key:/ポーカー|アミューズメント|ゲームカフェ|ボードゲーム|娯楽|ダーツ|ビリヤード|アミューズ/, name:'娯楽・アミューズメント',
     tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:55,r:'絵文字・記号は使わない'},{w:25,r:'「◎」「☆」「(^_-)」「(笑)」などの記号・顔文字を文末に1〜2個だけ'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}] },
+    palette:'◎ ☆ (^_-) ♬ (笑)',
+    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
+  { key:/飲食|レストラン|居酒屋|カフェ|喫茶|バー|ﾊﾞｰ|bar|スナック|ラウンジ|クラブ|ダイニング|食堂|ラーメン|グルメ|焼肉|寿司|そば|うどん|中華|イタリアン|フレンチ|ビストロ|定食|ランチ|ディナー|パブ|酒場/i, name:'飲食・バー・スナック',
+    tone:'ですます調のフランクで気さくな丁寧語。常連が近況を話すくらいの温度。おいしさ・居心地・雰囲気を素直に。バー/スナックは常連ならではのくだけた温かさ',
+    palette:'(≧∇≦) ♡ 🎵 (^^) (笑)',
+    emoji:[{w:50,r:'絵文字・記号は使わない'},{w:28,r:'「♡」「🎵」「(^^)」「(笑)」などを1〜2個、自然な位置に'},{w:22,r:'「(≧∇≦)」「♡」「🎵」や顔文字を2〜3個、気分が乗った感じで使ってもよい'}] },
   { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
     tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:35,r:'絵文字・記号は使わない'},{w:35,r:'🎵 💕 (^^) ✨ などを1〜3個、自然な位置に'},{w:30,r:'絵文字で単語を挟むように使ってもよい（例：スッキリ🎵）。1〜4個'}] },
+    palette:'💕 💖 😍 🎵 ✨ (^^) (*^_^*)',
+    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい'}] },
   { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
     tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:60,r:'絵文字・記号は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    palette:'(^^) ‼️ ✨',
+    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文|建築|建設|ハウス|住まい|設計事務所/, name:'住宅・相談',
     tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:82,r:'絵文字・記号は使わない'},{w:18,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:60,r:'絵文字・記号は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
-}
-
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:55,r:'絵文字・記号は使わない'},{w:25,r:'「◎」「☆」「(^_-)」「(笑)」などの記号・顔文字を文末に1〜2個だけ'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:35,r:'絵文字・記号は使わない'},{w:35,r:'🎵 💕 (^^) ✨ などを1〜3個、自然な位置に'},{w:30,r:'絵文字で単語を挟むように使ってもよい（例：スッキリ🎵）。1〜4個'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:60,r:'絵文字・記号は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:82,r:'絵文字・記号は使わない'},{w:18,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:60,r:'絵文字・記号は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
-}
-
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:55,r:'絵文字・記号は使わない'},{w:25,r:'「◎」「☆」「(^_-)」「(笑)」などの記号・顔文字を文末に1〜2個だけ'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:35,r:'絵文字・記号は使わない'},{w:35,r:'🎵 💕 (^^) ✨ などを1〜3個、自然な位置に'},{w:30,r:'絵文字で単語を挟むように使ってもよい（例：スッキリ🎵）。1〜4個'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:60,r:'絵文字・記号は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:82,r:'絵文字・記号は使わない'},{w:18,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:60,r:'絵文字・記号は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
-}
-
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:55,r:'絵文字・記号は使わない'},{w:25,r:'「◎」「☆」「(^_-)」「(笑)」などの記号・顔文字を文末に1〜2個だけ'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:35,r:'絵文字・記号は使わない'},{w:35,r:'🎵 💕 (^^) ✨ などを1〜3個、自然な位置に'},{w:30,r:'絵文字で単語を挟むように使ってもよい（例：スッキリ🎵）。1〜4個'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:60,r:'絵文字・記号は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:82,r:'絵文字・記号は使わない'},{w:18,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:60,r:'絵文字・記号は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
-}
-
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    palette:'（記号は控えめ）',
     emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
 ];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴', palette:'(^^) ☆ ✨',
+  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ'}] };
 
 function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
 
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
+// テンションメーター(1〜5)で絵文字・記号の量を決める。入力者が選ぶ。既定は3（おまかせ＝業種の自然な量）。
+function humanizeEmojiByTension(prof, tension){
+  if (tension <= 1) return '絵文字・記号は一切使わない。「！」も使わず、淡々とした落ち着いた文章にする';
+  if (tension === 2) return '絵文字・記号はほぼ使わない（使っても文末に控えめな記号を1個まで）。「！」も多くて1回';
+  if (tension === 3) return hPickW(prof.emoji).r;   // おまかせ＝実データ準拠の自然な量
+  if (tension === 4) return 'この業種に合う絵文字・記号（' + prof.palette + '）や 😊 🎵 ✨ などを2〜4個、明るめに使う。「！」も1〜3回。楽しさが伝わる感じに';
+  return 'この業種に合う絵文字・記号（' + prof.palette + '）や 😊 😍 🎵 💕 ✨ などの明るい絵文字を3〜6個たっぷり使う。「！」も多めに。とても元気で明るいテンションにする';
 }
 
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
 // 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
 var HUMANIZE_OPENINGS = [
   '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
@@ -1384,403 +753,14 @@ var HUMANIZE_BREAKS = [
 function humanizeDrawPersona(){
   var prof = humanizeProfile(SALON_CONFIG.businessType);
   var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var tension = (typeof state.tension === 'number') ? state.tension : 3; // 入力者が選ぶ絵文字テンション(1〜5)。既定3
   var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
   return {
     prof: prof,
     opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
     closing: hPick(HUMANIZE_CLOSINGS),
     length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
-}
-
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
-}
-
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
-}
-
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
-}
-
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
-    brk: hPickW(HUMANIZE_BREAKS).r,
-    hasFree: hasFree,
-  };
-}
-
-// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
-// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
-// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
-// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
-//
-// ユーザー確定方針：
-// ・口調は必ずですます調（常体・体言止めは混ぜない）
-// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
-// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
-// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
-// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
-//
-// review.html の buildSystemPrompt() を置き換える形で使う。
-// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
-
-function hPick(a){return a[Math.floor(Math.random()*a.length)];}
-function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
-
-// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
-// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
-var HUMANIZE_PROFILES = [
-  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
-  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
-    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
-    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
-  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
-    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
-    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
-  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
-    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
-    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
-  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
-    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
-    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
-];
-var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
-  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
-
-function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
-
-// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
-var HUMANIZE_OPENINGS = [
-  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
-  '一番よかったと思う点から書き始める',
-  '利用したサービス・内容から書き始める',
-  '対応してくれた人やお店の雰囲気の印象から書き始める',
-];
-var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
-
-var HUMANIZE_CLOSINGS = [
-  'ひとことお礼で締める',
-  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
-  'これからの予定や期待をひとこと添えて締める',
-  '良かった点の感想をもう一度そっと置いて、あっさり締める',
-];
-
-// 改行の癖（研究で学ぶ形の一つ）
-var HUMANIZE_BREAKS = [
-  { w:45, r:'改行はせず、ひとつながりの文章にする' },
-  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
-  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
-];
-
-function humanizeDrawPersona(){
-  var prof = humanizeProfile(SALON_CONFIG.businessType);
-  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
-  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
-  return {
-    prof: prof,
-    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
-    closing: hPick(HUMANIZE_CLOSINGS),
-    length: hPickW(lengthBands).r,
-    emoji: hPickW(prof.emoji).r,
+    emoji: humanizeEmojiByTension(prof, tension),
     brk: hPickW(HUMANIZE_BREAKS).r,
     hasFree: hasFree,
   };
@@ -1797,13 +777,18 @@ function buildSystemPrompt(){
   var defaultBanned = ['回数券','ポイント制','完全個室','個室','月額会員','定額制','会員制','サブスク'];
   var promote = (SALON_CONFIG.promoteTerms || []);
   var banned = defaultBanned.filter(function(w){ return !promote.some(function(k){ return k.indexOf(w) >= 0 || w.indexOf(k) >= 0; }); });
+  // この店だけで追加で禁止したい言葉（例：アミューズメントポーカーの「現金」「賭け」など、誤解を招く語）
+  var suppress = (SALON_CONFIG.suppressTerms || []);
+  for (var si = 0; si < suppress.length; si++) { if (banned.indexOf(suppress[si]) < 0) banned.push(suppress[si]); }
+  var moneyBan = suppress.some(function(w){ return w.indexOf('現金') >= 0 || w.indexOf('賭') >= 0 || w.indexOf('お金') >= 0; });
   // MEOキーワードから、禁止対象になっている店舗独自ワードは除いて提示する（承認済みのものだけ残る）
   var kws = (SALON_CONFIG.meoKeywords || []).filter(function(k){ return !banned.some(function(b){ return k.indexOf(b) >= 0 || b.indexOf(k) >= 0; }); });
   var kwLine = kws.length
     ? '地名やサービスの呼び方、この店ならではの言葉に触れるなら、次の言葉だけを自然に使ってよい（無理に入れない・全部は入れない・1〜2個で十分）：' + kws.join('、')
     : '店名以外の地名（駅名・市区名など）は文章に登場させない';
   var bannedLine = banned.length
-    ? '・【店舗独自ワード禁止】次の単語は本文に一文字も書かない：' + banned.map(function(w){return '「'+w+'」';}).join('') + '。これらの仕組み・設備の"名前そのもの"は出さず、そこから得られた良さを一般的な言葉に言い換える（例：期限のない仕組み→「自分のペースで続けられる」、現金を使わない仕組み→「気負わず楽しめる／現金を使わないので安心」）'
+    ? '・【禁止ワード】次の単語は本文に一文字も書かない：' + banned.map(function(w){return '「'+w+'」';}).join('') + '。これらの仕組み・設備・言葉の"名前そのもの"は出さず、そこから得られた良さだけを一般的な言葉で書く（例：「回数券に期限がない」→「自分のペースで続けられる」）'
+      + (moneyBan ? '。特に、お金・現金・賭け・課金・決済に関わる話題には一切触れず、「気負わず楽しめた」「安心して遊べた」のように書く' : '')
     : '';
   var checkWords = banned.length ? banned.map(function(w){return '「'+w+'」';}).join('') + 'や、' : '';
   var freeRule = p.hasFree
@@ -1826,7 +811,7 @@ function buildSystemPrompt(){
     + '・書き出し：' + p.opening + '\n'
     + '・締め方：' + p.closing + '\n'
     + '・長さ：' + p.length + '（前後してよいが、150文字を大きく下回らない）\n'
-    + '・絵文字/記号：' + p.emoji + '。😊 🙏 💪 🏠 👍 🎉 😄 のような"いかにもAI"の絵文字は絶対に使わない\n'
+    + '・絵文字/記号：' + p.emoji + '\n'
     + '・改行：' + p.brk + '\n'
     + '・褒めどころは1〜2点にしぼる。あれもこれも全部褒めない\n'
     + '・「スタッフの方」を連発しない。「担当してくれた人」など具体的に呼ぶか、主語を省く\n'
@@ -1846,127 +831,62 @@ function buildSystemPrompt(){
     + '【お店の補足（業種と雰囲気を理解するためだけに読む。ここに書かれた店舗独自の仕組み・料金・設備・制度は、クチコミ本文にそのまま書かない）】\n'
     + SALON_CONFIG.promptNote + '\n\n'
     + 'クチコミ本文だけを出力（前置き・説明・タイトルは不要）。\n'
-    + '【出力前の最終チェック】本文に' + checkWords + '😊などのAI絵文字が入っていたら、必ず一般的な言い換え（例：ポイント制→「現金を使わないので安心」）や削除をしてから出す。';
+    + '【出力前の最終チェック】次が本文に入っていたら、必ず直してから出す：'
+    + (checkWords ? '(1)' + checkWords.replace(/や、$/, '') + '→仕組みの名前は出さず、感じた良さを一般的な言葉に言い換える（削除でも可）。' : '')
+    + '(2)「また利用させていただきます」「また訪れたいと思います」「初心者の私でも」「〜な私でも」「アットホーム」「癒しの空間」「特別なひととき」などのAI定型句→自分の言葉に言い換える。';
 }
 // ===== 人間化エンジン ここまで =====
 
 function buildPrompt() {
-  // サービス名を取得
-  const serviceLabels = state.services.map(id => {
-    const s = SALON_CONFIG.services.find(x => x.id === id);
-    return s ? s.label : id;
-  });
-
-  // 良かった点のラベルを取得
-  const allGoodPoints = [
-    ...SALON_CONFIG.goodPoints.facial,
-    ...SALON_CONFIG.goodPoints.headspa,
-    ...SALON_CONFIG.goodPoints.yomogi
-  ];
-  const goodPointLabels = state.goodPoints.map(id => {
-    const found = allGoodPoints.find(x => x.id === id);
-    return found ? found.label : id;
-  });
-  const hasNegativeGood = state.goodPoints.some(id => {
-    const found = allGoodPoints.find(x => x.id === id);
-    return found?.negative;
-  });
-
-  // おすすめしたい方のラベル
-  const recLabels = state.recommendations.map(id => {
-    const found = SALON_CONFIG.recommendations.find(x => x.id === id);
-    return found ? found.label : id;
-  });
-  const hasNegativeRec = state.recommendations.some(id => {
-    const found = SALON_CONFIG.recommendations.find(x => x.id === id);
-    return found?.negative;
-  });
-
-  // 変化のラベル
-  const changeLabels = state.changes.map(id => {
-    const found = SALON_CONFIG.changes.find(x => x.id === id);
-    return found ? found.label : id;
-  });
-  const hasNegativeChange = state.changes.some(id => {
-    const found = SALON_CONFIG.changes.find(x => x.id === id);
-    return found?.negative;
-  });
-
-  // スタッフ印象のラベル
-  const staffLabels = state.staffImpressions.map(id => {
-    const found = SALON_CONFIG.staffImpressions.find(x => x.id === id);
-    return found ? found.label : id;
-  });
-  const hasNegativeStaff = state.staffImpressions.some(id => {
-    const found = SALON_CONFIG.staffImpressions.find(x => x.id === id);
-    return found?.negative;
-  });
-
+  const getLabels = (ids, source) => ids.map(id => { const f = source.find(x => x.id === id); return f ? f.label : id; });
+  const allGood = Object.values(SALON_CONFIG.goodPoints).flat();
+  const serviceLabels = state.services.map(id => { const s = SALON_CONFIG.services.find(x => x.id === id); return s ? s.label : id; });
+  const goodLabels = getLabels(state.goodPoints, allGood);
+  const recLabels = getLabels(state.recommendations, SALON_CONFIG.recommendations);
+  const staffLabels = getLabels(state.staffImpressions, SALON_CONFIG.staffImpressions);
+  const hasNeg = [...state.goodPoints, ...state.recommendations, ...state.staffImpressions]
+    .some(id => allGood.concat(SALON_CONFIG.recommendations, SALON_CONFIG.staffImpressions).find(x => x.id === id)?.negative);
   const genderText = { female: '女性', male: '男性', other: '未回答' }[state.gender] || '未回答';
   const ageText = { '20s': '20代以下', '30s': '30代', '40s': '40代', '50s': '50代以上' }[state.age] || '';
-  const hasAnyNegative = hasNegativeGood || hasNegativeRec || hasNegativeChange || hasNegativeStaff;
 
   return `以下の情報をもとに、${SALON_CONFIG.salonName}のGoogleクチコミ文章を作成してください。
 
-【サロン名】${SALON_CONFIG.salonName}
-【利用サービス】${serviceLabels.join('・')}
+【店舗名】${SALON_CONFIG.salonName}
+【利用したサービス】${serviceLabels.join('・')}
 【性別】${genderText}
 【年代】${ageText}
-【満足度】${state.score}/10
-【サービスの良かった点】${goodPointLabels.join('、')}
+【良かった点】${goodLabels.join('、')}
 【おすすめしたい方】${recLabels.join('、')}
-【体験前後の変化】${changeLabels.join('、')}
-【スタッフ・店内の印象】${staffLabels.join('、')}
+※【おすすめしたい方】は「こんな人にも合いそう」という他人へのおすすめであり、あなた自身の来店理由・同行者・シチュエーションではない。自分の体験談に変換しないこと。
+【スタッフ・お店の印象】${staffLabels.join('、')}
 【自由記述】${state.freeText || 'なし'}
-【ネガティブ要素の有無】${hasAnyNegative ? 'あり（全体的に満足したという自然なフォローを添えること）' : 'なし'}
+【ネガティブ要素の有無】${hasNeg ? 'あり（全体的に満足したという自然なフォローを添えること）' : 'なし'}
 
 上記の情報を自然な会話文にまとめ、実際の体験として書いてください。`;
 }
 
-// ──────────────────────────────────────────
-// コピー・リセット
-// ──────────────────────────────────────────
 function copyReview() {
   const text = document.getElementById('review-result').textContent;
   navigator.clipboard.writeText(text).then(() => {
     document.getElementById('copy-success').textContent = '✓ コピーしました！Googleクチコミに貼り付けてください。';
   }).catch(() => {
-    // フォールバック
     const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     document.getElementById('copy-success').textContent = '✓ コピーしました！';
   });
 }
 
-function regenerate() {
-  generateReview();
-}
+function regenerate() { generateReview(); }
 
 function resetAll() {
-  // stateリセット
-  state.services = [];
-  state.gender = null;
-  state.age = null;
-  state.goodPoints = [];
-  state.recommendations = [];
-  state.changes = [];
-  state.staffImpressions = [];
-  state.freeText = "";
-  state.score = null;
-
-  // UI全リセット
+  Object.assign(state, { services: [], gender: null, age: null, tension: 3, goodPoints: [], recommendations: [], staffImpressions: [], freeText: "" });
   document.querySelectorAll('.checkbox-item').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.radio-btn').forEach(el => el.classList.remove('selected'));
-  document.querySelectorAll('.score-btn').forEach(el => el.classList.remove('selected'));
+  const tMid = document.querySelectorAll('#tension-group .radio-btn')[2];
+  if (tMid) tMid.classList.add('selected');
   document.getElementById('free-text').value = '';
   document.getElementById('btn-step1-next').disabled = true;
   document.getElementById('btn-step2-next').disabled = true;
-  document.getElementById('btn-generate').disabled = true;
-
   goStep(0);
 }
 </script>
