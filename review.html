@@ -454,15 +454,6 @@
         <div class="radio-btn" data-val="50s" onclick="selectRadio('age','50s',this)">50代以上</div>
       </div>
     </div>
-    <div>
-      <div class="sub-label">クチコミの雰囲気（お好みで）</div>
-      <div class="radio-group" id="mood-group">
-        <div class="radio-btn selected" onclick="selectMood('auto',this)">おまかせ</div>
-        <div class="radio-btn" onclick="selectMood('bright',this)">明るくノリよく</div>
-        <div class="radio-btn" onclick="selectMood('calm',this)">落ち着いて丁寧に</div>
-        <div class="radio-btn" onclick="selectMood('short',this)">短めでサクッと</div>
-      </div>
-    </div>
   </div>
   <div class="mt-16">
     <button class="btn btn-primary" id="btn-step2-next" onclick="goStep(3)" disabled>次へ</button>
@@ -602,7 +593,6 @@ const state = {
   services: [],
   gender: null,
   age: null,
-  mood: 'auto',
   goodPoints: [],
   recommendations: [],
   changes: [],
@@ -697,12 +687,6 @@ function selectRadio(type, val, el) {
 
 function checkStep2() {
   document.getElementById('btn-step2-next').disabled = !(state.gender && state.age);
-}
-
-function selectMood(val, el) {
-  document.querySelectorAll('#mood-group .radio-btn').forEach(b => b.classList.remove('selected'));
-  el.classList.add('selected');
-  state.mood = val;
 }
 
 // ──────────────────────────────────────────
@@ -857,188 +841,1012 @@ async function generateReview() {
   }
 }
 
-// ===== 人間化エンジン ここから（humanize-engine v1） =====
-// 目的：クチコミが溜まったとき「同じ人が書いたような文章」にならないようにする。
-// 仕組み：生成のたびに JavaScript の乱数で「隠しペルソナ」（声・構成・クセ・絵文字・
-// 長さ・MEOキーワードの有無）を抽選し、AIへの指示を毎回変える。
-// AIに「毎回変えて」と頼むだけでは必ず同じ文体に収束するため、プログラム側で強制的にバラす。
+// ===== 人間化エンジン v3（実在クチコミ711件の分析準拠） =====
+// 目的：AIクチコミから「作られた感／お客様の声っぽさ」を消し、その辺の普通の人が
+// スマホでサッと書いた本物のクチコミにする。クチコミが溜まっても同一人物感が出ないよう、
+// 生成のたびに書き方（書き出し・締め・長さ・口調・絵文字）を乱数で変える。
+//
+// ユーザー確定方針：ですますベース＋常体・体言止めを2〜3割混ぜる／誤字は入れない／
+// 超短文・小さな不満・言いさしの締めは不採用（きちんと前向きに閉じる・極端に短くしない）。
+// 効かせるリアル要素：満足の前に文脈／抽象褒めを具体の数字・固有名詞へ翻訳／
+// 書き出しと締めを毎回変える／業種でトーンと絵文字量を変える／AIブラックリスト封印／
+// 本物の"手触り"をお手本例文で見せる／地名は勝手に創作させない。
+//
+// このブロックは review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
 
-function hPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function hPickW(items) {
-  const total = items.reduce((s, x) => s + x.w, 0);
-  let r = Math.random() * total;
-  for (const x of items) { r -= x.w; if (r < 0) return x; }
-  return items[items.length - 1];
-}
-function hShuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-  return a;
-}
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+function hShuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
-const HUMANIZE = {
-  // 声（口調カード）。casual: 0=きちんと 1=ふつう 2=くだけ気味
-  voices: {
-    female: [
-      { desc: '友達に話すようなくだけた素直な口調。「〜だった！」「ほんとに」「すごく」など体温のある言葉を使う', casual: 2 },
-      { desc: 'やわらかく温かみのある口調。丁寧だが堅苦しくなく、感じたことを素直に書く', casual: 1 },
-      { desc: '日記のような、思ったことをそのまま書く口調。文は短めで飾らない', casual: 2 },
-      { desc: 'きちんとした丁寧語。ただし固くなりすぎず、具体的な場面の描写で気持ちを伝える', casual: 0 },
-      { desc: '感動が伝わるテンション高めの口調。勢いがあって感嘆が多い', casual: 2 },
-    ],
-    male: [
-      { desc: '率直で短めの文を積み重ねる口調。飾らず思ったことをそのまま書く', casual: 2 },
-      { desc: '誠実で落ち着いた丁寧語。淡々としているが信頼感がある', casual: 0 },
-      { desc: '実用レビュー風。事実や具体的な情報を中心に書き、感想は最後に少しだけ', casual: 1 },
-      { desc: '基本は淡々としているが、最後に一言だけ本音の感想がこぼれる口調', casual: 1 },
-      { desc: 'やや熱っぽく語る口調。良かった点を具体的に力を込めて書く', casual: 2 },
-    ],
-    other: [
-      { desc: '自然で読みやすい丁寧語。飾らない', casual: 0 },
-      { desc: '少しくだけた話し言葉寄りの文体', casual: 1 },
-      { desc: '実用レビュー風。情報中心で簡潔', casual: 1 },
-    ],
-  },
-  // 書き出し・構成のパターン。毎回同じ起承転結にならないようにする
-  structures: [
-    '最初の一文で総合的な感想を言い切ってから、その理由を書く',
-    '利用したきっかけや背景の説明から書き始める',
-    'スタッフ・担当者の話から書き始める',
-    '一番印象に残ったことひとつだけを深く書き、他のことはほとんど書かない',
-    '利用する前の自分（または以前の状態）と比べる形で書く',
-    '最初は少し迷い・不安があったという話から入り、実際どうだったかにつなげる',
-    '印象的だった具体的な場面・エピソードの描写から入る',
-    '淡々と事実を並べる実用レビュー風にまとめ、感情表現は最後に少しだけ',
-  ],
-  // 表現のクセ（0〜2個抽選）。下品・誤字はNGの範囲で「崩し」を作る
-  quirks: [
-    { t: '「！」を2〜4回使う', exciteOnly: true },
-    { t: '体言止めの文を1〜2回入れる' },
-    { t: '一文だけ10文字以内のとても短い文を入れる' },
-    { t: 'かっこ書きの補足（例：「（初めてだったので）」）を1回使う' },
-    { t: '文末が「〜かな。」「〜かも。」の文を1つ入れる', exciteOnly: true },
-    { t: '句読点をやや少なめにした、ひと息で読ませる文を1つ混ぜる' },
-  ],
-};
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+var HUMANIZE_PROFILES = [
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    emoji:[{w:55,r:'絵文字は使わない'},{w:25,r:'☆ ◎ (^_-) ♬ など昔ながらの顔文字・記号を1〜2個'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}],
+    tone:'フランクで気取らない。常連でも初心者でも書きそうな素朴な感じ',
+    specifics:'料金の生数字（例:110分3000円）・滞在時間・ゲーム名・時間帯・客層・立地',
+    anchors:[
+'会社の同僚に誘われて初めて行きました。ルールうろ覚えだったけど、ディーラーの方が都度教えてくれるので問題なし。ポイント制で現金のやり取りがないのも安心でした。平日の夜でもそこそこ人がいて、2時間くらいであっという間。また行きます。',
+'駅から歩いて5分くらい。初心者卓があって、そこでルール覚えました。スタッフの対応も気さくで居心地よかったです。',
+'ポーカーやってみたくてずっと気になってたお店。思い切って一人で行ってみました。最初の30分はルール説明を丁寧にしてもらえて、未経験でもちゃんと参加できました！変にガツガツした雰囲気じゃないのが良かった。'] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    emoji:[{w:35,r:'絵文字は使わない'},{w:35,r:'絵文字か顔文字を1〜3個、自然な位置に'},{w:30,r:'🎵💕(^^)などで気分を出す。単語を挟むように使ってもよい'}],
+    tone:'明るめでもOK。悩み→施術→変化の流れが出やすい',
+    specifics:'メニュー名・コース時間・料金・担当者の呼び方や外見・肌や仕上がりの具体的な変化',
+    anchors:[
+'肌のくすみが気になってて、家の近くで探して予約しました。カウンセリングで悩みをちゃんと聞いてくれて、施術中は気持ちよくて半分寝てました。終わったあと頬のあたりがワントーン明るくなってて驚き。もちもちします。',
+'毛穴のケアで通ってます。毎回丁寧だし、肌の調子いいです。担当の方が話しやすくてリラックスできる。',
+'初めてのフェイシャルで緊張してたんですが、部屋も清潔で落ち着けました。しつこい勧誘とかもなくて、また来たいなと思える感じでした。'] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    emoji:[{w:60,r:'絵文字は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}],
+    tone:'感謝と結果で語る。動機（体型・不調）から入りやすい',
+    specifics:'数字（○kg減・○cm・週○回・○ヶ月・1回○円）・部位や症状・担当者名の自然な呼び方',
+    anchors:[
+'40代になって体型が戻らなくなり、思い切って入会しました。週2で通って2ヶ月、体重は4キロ落ちて、何より姿勢が変わったのが自分でも分かります。トレーニング前に体をほぐしてくれるのが効いてる気がする。',
+'完全個室なので人目を気にせず集中できます。指導が的確。無理な食事制限もなく続けられてます。',
+'運動が続かないタイプでしたが、ここは予約が取りやすくて自分のペースでいけます。回数券に期限がないのも助かる。3ヶ月でウエスト6cm減って、周りにも痩せた?って聞かれるようになりました。'] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    emoji:[{w:80,r:'絵文字は使わない'},{w:20,r:'「！」を1回だけ、絵文字はなし'}],
+    tone:'真面目・落ち着いた大人。高額な決断ゆえ情緒的な言葉は避け、事実で語る',
+    specifics:'担当者の呼び方・相談した内容・比較した社数・期間・金額感・「もっと早く相談すればよかった」等の実感',
+    anchors:[
+'家を建てたくて、まず何から始めればいいか分からず相談に伺いました。予算のことや土地の探し方を、こちらのペースに合わせて一つずつ説明してもらえて、頭の中が整理できました。しつこい営業がないので安心して相談できます。',
+'注文住宅を検討中に利用しました。複数の会社を紹介してもらい、比較しやすかったです。中立の立場でアドバイスをもらえるのがありがたい。',
+'住宅ローンのことが不安で予約しました。担当の方が銀行の選び方から教えてくれて、初歩的な質問にも嫌な顔ひとつせず答えてもらえました。もっと早く相談すればよかったです。'] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', emoji:[{w:60,r:'絵文字は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}],
+  tone:'自然で素朴', specifics:'料金・時間・担当者の呼び方など具体的な情報',
+  anchors:['気になっていたので利用してみました。対応が丁寧で、思っていたより良かったです。また来たいと思います。'] };
 
-function hEmojiRule(gender, casual) {
-  if (casual === 0) return '絵文字は使わない';
-  const base = gender === 'female'
-    ? [{ w: 20, r: '絵文字は使わない' }, { w: 35, r: '絵文字を1個だけ自然な位置に使う' }, { w: 30, r: '絵文字を2〜3個、離れた場所に散らして使う' }, { w: 15, r: '絵文字を文章の一番最後にだけ1〜2個置く' }]
-    : gender === 'male'
-      ? [{ w: 60, r: '絵文字は使わない' }, { w: 30, r: '絵文字を1個だけ使う' }, { w: 10, r: '絵文字を文章の一番最後にだけ1個置く' }]
-      : [{ w: 80, r: '絵文字は使わない' }, { w: 20, r: '絵文字を1個だけ使う' }];
-  return hPickW(base).r + '。絵文字の後で無理に改行しない';
-}
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
 
-// 長さ：150〜300文字の範囲内で、満足度と連動させつつ帯を分けて抽選する。
-// 同じ長さに揃うと作られた感になるため、範囲内でもバラす（ユーザー方針：150〜300字厳守）。
-function hLengthRule(score, mood) {
-  if (mood === 'short') return hPick(['150〜180文字', '150〜200文字']);
-  const bands = score >= 9
-    ? [{ w: 25, r: '150〜200文字' }, { w: 40, r: '200〜250文字' }, { w: 35, r: '250〜300文字' }]
-    : score >= 7
-      ? [{ w: 35, r: '150〜200文字' }, { w: 40, r: '190〜240文字' }, { w: 25, r: '240〜290文字' }]
-      : [{ w: 50, r: '150〜190文字' }, { w: 35, r: '180〜230文字' }, { w: 15, r: '230〜270文字' }];
-  return hPickW(bands).r;
-}
+var HUMANIZE_OPENINGS = [
+  '利用しようと思ったきっかけや、その時の悩み・不安から書き始める',
+  '立地やアクセス、行った時間帯など状況から書き始める',
+  '結論（全体の感想）を一言先に言ってから、理由を書く',
+  '対応してくれた人の話から書き始める',
+  '利用した内容・メニュー・頼んだものから書き始める',
+];
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  '体言止めで締める',
+  'これからの予定や期待をひとこと添えて締める',
+  '事実や感想をひとつ置いて、あっさり終える',
+];
 
-// MEOキーワード：全件に同じ形で入ると「指紋」になるため、入れる個数と種類を毎回変える。
-// 8割の確率で1〜2個入れる（どれを入れるかは毎回抽選・表記ゆれOK）。2割は入れない。
-function hKeywordRule() {
-  const kws = (SALON_CONFIG.meoKeywords || []);
-  if (!kws.length || Math.random() < 0.2) return '特定のキーワードを入れる必要はない。地名やサービス名を無理に入れないこと';
-  const n = (kws.length >= 2 && Math.random() < 0.45) ? 2 : 1;
-  const picked = hShuffle(kws).slice(0, n);
-  return '「' + picked.join('」「') + '」という言葉をそれぞれ1回だけ、流れを壊さない自然な形で入れる。表記は少し変えてもよい（例：「福井駅前」→「福井駅の近く」のような自然な言い換え）。これ以外のキーワードは意識して入れない';
-}
-
-// 中心に書く点の抽選：選択項目を全部盛り込むと「まんべんなく褒めるパンフレット」になる。
-// 1〜2点に絞って深く書かせる（ネガティブ項目は中心にしない）。
-function hFocus() {
-  const allGood = Object.values(SALON_CONFIG.goodPoints).flat();
-  const cands = [];
-  state.goodPoints.forEach(id => { const x = allGood.find(o => o.id === id); if (x && !x.negative) cands.push(x.label); });
-  state.changes.forEach(id => { const x = SALON_CONFIG.changes.find(o => o.id === id); if (x && !x.negative) cands.push(x.label); });
-  state.staffImpressions.forEach(id => { const x = SALON_CONFIG.staffImpressions.find(o => o.id === id); if (x && !x.negative) cands.push(x.label); });
-  if (!cands.length) return [];
-  const n = Math.min(cands.length, Math.random() < 0.5 ? 1 : 2);
-  return hShuffle(cands).slice(0, n);
-}
-
-function drawPersona() {
-  const mood = state.mood || 'auto';
-  let pool = HUMANIZE.voices[state.gender] || HUMANIZE.voices.other;
-  if (mood === 'bright') pool = pool.filter(v => v.casual >= 1);
-  if (mood === 'calm') pool = pool.filter(v => v.casual <= 1);
-  if (!pool.length) pool = HUMANIZE.voices[state.gender] || HUMANIZE.voices.other;
-  const voice = hPick(pool);
-  const structure = (mood === 'short')
-    ? hPick(['一番印象に残ったことひとつだけを短く書く', '淡々と事実を1〜2個書いて、短い感想で締める'])
-    : hPick(HUMANIZE.structures);
-  let quirkPool = HUMANIZE.quirks;
-  if (mood === 'calm' || voice.casual === 0) quirkPool = quirkPool.filter(q => !q.exciteOnly);
-  const quirks = hShuffle(quirkPool).slice(0, Math.floor(Math.random() * 3)).map(q => q.t);
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var lengthBands = [{w:35,r:'90〜140文字'},{w:40,r:'150〜220文字'},{w:25,r:'230〜320文字'}];
   return {
-    voice: voice,
-    structure: structure,
-    quirks: quirks,
-    emojiRule: hEmojiRule(state.gender, voice.casual),
-    lengthRule: hLengthRule(state.score, mood),
-    keywordRule: hKeywordRule(),
-    focus: hFocus(),
+    prof: prof,
+    opening: hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    taiMix: hPick([
+      'ベースはですます。ただし2〜3割の文を常体（〜だった。〜と思う。）や体言止め（〜が印象的。）にして、単調さをなくす',
+      'ですますを基本にしつつ、ところどころ体言止めや短い言い切りを混ぜる',
+      'ですますが中心。1〜2文だけ常体をさりげなく混ぜる',
+    ]),
   };
 }
 
-function buildSystemPrompt() {
-  const p = drawPersona();
-  const genderText = { female: '女性', male: '男性', other: '性別未回答' }[state.gender] || '性別未回答';
-  const ageText = { '20s': '20代以下', '30s': '30代', '40s': '40代', '50s': '50代以上' }[state.age] || '';
-  const quirkText = p.quirks.length ? p.quirks.map(q => '・' + q).join('\n') : '・特になし。素直に書く';
-  const focusText = p.focus.length
-    ? '中心に書くのは「' + p.focus.join('」「') + '」。それ以外の項目は軽く触れる程度にするか、流れに合わなければ書かなくてよい'
-    : '選ばれた項目の中から1〜2点だけを選んで中心に書く';
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
 
-  return `あなたはGoogleクチコミの文章を書くアシスタントです。実在のお客様のアンケート回答をもとに、その人が自分で書いたとしか思えない自然な文章を作ります。
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
 
-【今回の書き手の人物像】
-・${genderText}・${ageText}
-・口調：${p.voice.desc}
-・年代や性別らしさは、にじむ程度でよい。わざとらしく強調しない
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:55,r:'絵文字・記号は使わない'},{w:25,r:'「◎」「☆」「(^_-)」「(笑)」などの記号・顔文字を文末に1〜2個だけ'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:35,r:'絵文字・記号は使わない'},{w:35,r:'🎵 💕 (^^) ✨ などを1〜3個、自然な位置に'},{w:30,r:'絵文字で単語を挟むように使ってもよい（例：スッキリ🎵）。1〜4個'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:60,r:'絵文字・記号は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:82,r:'絵文字・記号は使わない'},{w:18,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:60,r:'絵文字・記号は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}] };
 
-【文章の構成】
-・${p.structure}
-・アンケートで選ばれた項目をすべて盛り込まないこと。${focusText}
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
 
-【長さ】
-・${p.lengthRule}（多少前後してよいが、150文字未満・300文字超えにはしない）
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
 
-【表現のクセ（不自然にならない範囲で混ぜる）】
-${quirkText}
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
 
-【絵文字】
-・${p.emojiRule}
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
 
-【キーワード】
-・${p.keywordRule}
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
 
-【人間らしさのルール（最重要）】
-・アンケートの選択肢の文言をそのまま使わず、必ず自分の言葉に言い換える（例：「スタッフの対応が丁寧」→「担当してくれた方がとても親切で」など）
-・「大変満足しました」「また利用させていただきます」「〜させていただきました」のような、誰でも書きそうな定型文を使わない。締めの一文も毎回ちがう自然な終わり方にする
-・文章は上手すぎなくてよい。構成が多少不器用でも、実際の人が書いた温度感を優先する
-・「**」「""」などの記号、箇条書き、見出しは使わない。ふつうの文章のみ
-・「スタッフの皆様」「貴店」などの過度にかしこまった敬語は使わない
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
 
-【ネガティブな回答が含まれる場合】
-・隠さずに軽く触れたうえで、「それでも全体としては満足している」という本音の流れで自然にフォローする
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
 
-【自由記述がある場合】
-・本人の生の言葉なので最優先で反映し、言い回しもできるだけ活かす
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:55,r:'絵文字・記号は使わない'},{w:25,r:'「◎」「☆」「(^_-)」「(笑)」などの記号・顔文字を文末に1〜2個だけ'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:35,r:'絵文字・記号は使わない'},{w:35,r:'🎵 💕 (^^) ✨ などを1〜3個、自然な位置に'},{w:30,r:'絵文字で単語を挟むように使ってもよい（例：スッキリ🎵）。1〜4個'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:60,r:'絵文字・記号は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:82,r:'絵文字・記号は使わない'},{w:18,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:60,r:'絵文字・記号は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}] };
 
-【店舗からの補足】
-${SALON_CONFIG.promptNote}
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
 
-クチコミ本文だけを出力する。前置き・説明・タイトルは不要。`;
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
+
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:55,r:'絵文字・記号は使わない'},{w:25,r:'「◎」「☆」「(^_-)」「(笑)」などの記号・顔文字を文末に1〜2個だけ'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:35,r:'絵文字・記号は使わない'},{w:35,r:'🎵 💕 (^^) ✨ などを1〜3個、自然な位置に'},{w:30,r:'絵文字で単語を挟むように使ってもよい（例：スッキリ🎵）。1〜4個'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:60,r:'絵文字・記号は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:82,r:'絵文字・記号は使わない'},{w:18,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:60,r:'絵文字・記号は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}] };
+
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
+
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
+
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:55,r:'絵文字・記号は使わない'},{w:25,r:'「◎」「☆」「(^_-)」「(笑)」などの記号・顔文字を文末に1〜2個だけ'},{w:20,r:'気分が乗った所で「！」を2〜3回。絵文字はなしか1個'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:35,r:'絵文字・記号は使わない'},{w:35,r:'🎵 💕 (^^) ✨ などを1〜3個、自然な位置に'},{w:30,r:'絵文字で単語を挟むように使ってもよい（例：スッキリ🎵）。1〜4個'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:60,r:'絵文字・記号は使わない'},{w:25,r:'顔文字を1個だけ、または「！」を1〜2回'},{w:15,r:'(^^)や✨を1個'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:82,r:'絵文字・記号は使わない'},{w:18,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:60,r:'絵文字・記号は使わない'},{w:40,r:'絵文字か顔文字を1個だけ'}] };
+
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
+
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
+
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
+
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
+
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
+
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
+
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
+
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
+
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
+
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
+
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
+
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
+
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
+
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
+
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
+
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
+
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
+
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
+
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
+
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+// ===== 人間化エンジン v4（実在クチコミ711件の分析準拠・形だけ学習） =====
+// 考え方：スキルが持つのは「形（口調・文章・改行・絵文字・記号）」だけ。
+// クチコミの「中身（体験・エピソード・数字）」は、お客様のアンケート回答と
+// 自由メッセージからだけ作る。AIが体験を勝手に創作しない（＝作られた感の根絶）。
+//
+// ユーザー確定方針：
+// ・口調は必ずですます調（常体・体言止めは混ぜない）
+// ・誤字は入れない／小さな不満・超短文・言いさしの締めは入れない（前向きに閉じる・下限150字目安）
+// ・体験/きっかけ/同行者/数字などを勝手に作らない。自由メッセージにあればそれを活かす
+// ・研究から学ぶのは形：業種ごとのトーン・絵文字/記号の使い方・改行の癖・長さや書き出し/締めのばらつき
+// ・地名は勝手に創作しない（各店のmeoKeywordにある地名だけ）
+//
+// review.html の buildSystemPrompt() を置き換える形で使う。
+// グローバルの state（アンケート回答）と SALON_CONFIG（店舗設定）を参照する。
+
+function hPick(a){return a[Math.floor(Math.random()*a.length)];}
+function hPickW(items){var t=items.reduce(function(s,x){return s+x.w;},0);var r=Math.random()*t;for(var i=0;i<items.length;i++){r-=items[i].w;if(r<0)return items[i];}return items[items.length-1];}
+
+// 業種プロファイル（SALON_CONFIG.businessType のキーワードで判定）
+// 中身の例文は持たない。持つのは「形」＝トーン・絵文字/記号の使い方だけ。
+var HUMANIZE_PROFILES = [
+  // 絵文字の頻度・パレットは実在クチコミ711件の実態に合わせている（多くはゼロ、使う人は顔文字/記号中心、😊等のAI定番は避ける）
+  { key:/ポーカー|アミューズメント|バー|ゲーム|娯楽|ダーツ|ビリヤード/, name:'娯楽・アミューズメント',
+    tone:'ですます調のフランクな丁寧語。硬すぎず、気取らない。友達に近況を話すくらいの温度',
+    emoji:[{w:62,r:'絵文字・記号は使わない'},{w:23,r:'「◎」「☆」「(^_-)」「♬」「(笑)」などの記号・顔文字を文末に1〜2個だけ（😊や✨は使わない）'},{w:15,r:'気分が乗った所で「！」を2〜3回。絵文字は基本なし'}] },
+  { key:/美容|エステ|ネイル|まつ|脱毛|サロン|ヘア|髪|リラク/, name:'美容・サロン',
+    tone:'ですます調で明るめ。うれしさが素直に出る感じ',
+    emoji:[{w:48,r:'絵文字・記号は使わない'},{w:30,r:'「💕」「🎵」「(^^)」「(*^_^*)」などを1〜2個、自然な位置に（😊は使わない）'},{w:22,r:'「💕」「💖」「😍」「🎵」や顔文字を2〜3個、単語を挟むように使ってもよい（😊は使わない）'}] },
+  { key:/ジム|トレーニング|フィットネス|整体|接骨|治療|鍼|パーソナル|ボディ/, name:'ジム・整体',
+    tone:'ですます調で落ち着いた感謝ベース。淡々としつつ前向き',
+    emoji:[{w:68,r:'絵文字・記号は使わない'},{w:22,r:'顔文字を1個だけ（「(^^)」など）、または「！」を1〜2回'},{w:10,r:'「(^^)」か「‼️」を1個だけ（😊・🙏・💪・✨は使わない）'}] },
+  { key:/住宅|工務店|不動産|家づくり|相談|保険|士業|リフォーム|新築|注文/, name:'住宅・相談',
+    tone:'ですます調で真面目・落ち着いた大人。高額な決断ゆえ、情緒的な言葉より落ち着いた語り',
+    emoji:[{w:88,r:'絵文字・記号は使わない'},{w:12,r:'「！」を1回だけ、絵文字はなし'}] },
+];
+var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴',
+  emoji:[{w:70,r:'絵文字・記号は使わない'},{w:30,r:'顔文字（(^^)など）を1個だけ（😊は使わない）'}] };
+
+function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
+
+// 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
+var HUMANIZE_OPENINGS = [
+  '全体の感想（満足度やおすすめ度）を一言先に言ってから、良かった点を書く',
+  '一番よかったと思う点から書き始める',
+  '利用したサービス・内容から書き始める',
+  '対応してくれた人やお店の雰囲気の印象から書き始める',
+];
+var HUMANIZE_OPENINGS_FREE = '自由メッセージにお客様自身の話があるので、その内容から自然に書き始める';
+
+var HUMANIZE_CLOSINGS = [
+  'ひとことお礼で締める',
+  '「また行きたい」「また来ます」を、さらっと軽く言って締める（大げさな再訪宣言にはしない）',
+  'これからの予定や期待をひとこと添えて締める',
+  '良かった点の感想をもう一度そっと置いて、あっさり締める',
+];
+
+// 改行の癖（研究で学ぶ形の一つ）
+var HUMANIZE_BREAKS = [
+  { w:45, r:'改行はせず、ひとつながりの文章にする' },
+  { w:35, r:'話の切れ目で1回だけ改行して、2つのまとまりに分ける' },
+  { w:20, r:'2〜3文ごとに軽く改行して、スマホで打ったような見た目にする' },
+];
+
+function humanizeDrawPersona(){
+  var prof = humanizeProfile(SALON_CONFIG.businessType);
+  var hasFree = !!(state.freeText && state.freeText.trim().length >= 6);
+  var lengthBands = [{w:40,r:'150〜200文字'},{w:40,r:'200〜260文字'},{w:20,r:'260〜320文字'}];
+  return {
+    prof: prof,
+    opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
+    closing: hPick(HUMANIZE_CLOSINGS),
+    length: hPickW(lengthBands).r,
+    emoji: hPickW(prof.emoji).r,
+    brk: hPickW(HUMANIZE_BREAKS).r,
+    hasFree: hasFree,
+  };
+}
+
+function buildSystemPrompt(){
+  var p = humanizeDrawPersona();
+  var prof = p.prof;
+  var genderText = ({female:'女性',male:'男性',other:'性別未回答'})[state.gender] || '性別未回答';
+  var ageText = ({'20s':'20代以下','30s':'30代','40s':'40代','50s':'50代以上'})[state.age] || '';
+  // 店舗独自ワードの抑制。基本は全て禁止（店により有無が違い宣伝文＝AI感になるため）。
+  // 例外は SALON_CONFIG.promoteTerms に明示的に入れた語だけ（＝新規作成時にユーザーが「載せてよい」と
+  // 案件ごとに承認した店舗独自ワード）。promoteTerms が無い/空なら、店舗独自ワードは全て抑制。
+  var defaultBanned = ['回数券','ポイント制','完全個室','個室','月額会員','定額制','会員制','サブスク'];
+  var promote = (SALON_CONFIG.promoteTerms || []);
+  var banned = defaultBanned.filter(function(w){ return !promote.some(function(k){ return k.indexOf(w) >= 0 || w.indexOf(k) >= 0; }); });
+  // MEOキーワードから、禁止対象になっている店舗独自ワードは除いて提示する（承認済みのものだけ残る）
+  var kws = (SALON_CONFIG.meoKeywords || []).filter(function(k){ return !banned.some(function(b){ return k.indexOf(b) >= 0 || b.indexOf(k) >= 0; }); });
+  var kwLine = kws.length
+    ? '地名やサービスの呼び方、この店ならではの言葉に触れるなら、次の言葉だけを自然に使ってよい（無理に入れない・全部は入れない・1〜2個で十分）：' + kws.join('、')
+    : '店名以外の地名（駅名・市区名など）は文章に登場させない';
+  var bannedLine = banned.length
+    ? '・【店舗独自ワード禁止】次の単語は本文に一文字も書かない：' + banned.map(function(w){return '「'+w+'」';}).join('') + '。これらの仕組み・設備の"名前そのもの"は出さず、そこから得られた良さを一般的な言葉に言い換える（例：期限のない仕組み→「自分のペースで続けられる」、現金を使わない仕組み→「気負わず楽しめる／現金を使わないので安心」）'
+    : '';
+  var checkWords = banned.length ? banned.map(function(w){return '「'+w+'」';}).join('') + 'や、' : '';
+  var freeRule = p.hasFree
+    ? '・自由メッセージにお客様本人の体験・エピソード・具体的な話が書かれている。これを中心にして、お客様の言葉づかいをできるだけ活かして自然にふくらませる。ただしメッセージに書かれていない場所・きっかけ・同行者・数字を付け足さない（内容の範囲でふくらませる）'
+    : '・自由メッセージは空なので、選ばれた項目（利用したサービス・良かった点・変化・印象）についての感想だけを自然な文章にする。来店のきっかけ・理由・シチュエーション（「仕事帰りに」「友達と」「出張で」など）は書かない。無理に長くしたり、話を作って埋めたりしない';
+
+  return 'あなたは、実在するお客さんになりきってGoogleクチコミを書く人です。宣伝文や「お客様の声」ではなく、その辺の普通の人がスマホでサッと書いた本物のクチコミを作ります。\n\n'
+    + '【お店】' + SALON_CONFIG.salonName + '（' + SALON_CONFIG.businessType + '）\n'
+    + '【書き手】' + genderText + '・' + ageText + '\n\n'
+    + '【中身のルール（最重要・ここを外すと嘘のクチコミになる）】\n'
+    + '・クチコミの"中身"は、お客様が実際に選んだ回答と、自由メッセージに書いた内容だけから作る\n'
+    + freeRule + '\n'
+    + '・お客様が書いていない出来事・きっかけ・同行者・数字・エピソードを勝手に作らない（例：「友達に誘われて」「息子と来た」「2ヶ月で3kg」などをでっち上げない）\n'
+    + '・お店からの補足にある"お店の事実"や想定客層（出張・親子・仕事帰りなど）を、あなた自身の来店理由・シチュエーションとして勝手に採用しない\n'
+    + '・【法律・コンプライアンス上の禁止】子ども・お子様・親子・子連れ・お孫さんなどに触れる場合は、お酒・飲酒・アルコール・「飲みながら」「一杯」などを同じクチコミに絶対に一緒に登場させない（逆に、お酒の話を書くなら子どもの話は出さない）\n'
+    + '・アンケートの選択肢の言葉をそのまま並べず、自分の言葉で自然に言い換える\n'
+    + '・回数券・ポイント制・月額会員・定額・完全個室などの、その店ならではの仕組み・制度・料金プラン・設備は、名前や仕組みを本文に書かない（店によって有無が違い、宣伝文のように見えるため）。選んだ回答やお店の補足にそういう仕組みが出てきても、そこから得られた"良さ・感覚"だけを一般的な言葉で表す（例：「回数券に期限がなく通えた」→「自分のペースで無理なく続けられた」、「現金を賭けないポイント制」→「安心して楽しめた」、「完全個室」→「周りを気にせず過ごせた」）\n\n'
+    + '【形のルール（毎回変えています。ここが本物らしさを作る）】\n'
+    + '・口調：' + prof.tone + '。必ず「です・ます」で書き、常体（〜だった）やタメ口にはしない\n'
+    + '・書き出し：' + p.opening + '\n'
+    + '・締め方：' + p.closing + '\n'
+    + '・長さ：' + p.length + '（前後してよいが、150文字を大きく下回らない）\n'
+    + '・絵文字/記号：' + p.emoji + '。😊 🙏 💪 🏠 👍 🎉 😄 のような"いかにもAI"の絵文字は絶対に使わない\n'
+    + '・改行：' + p.brk + '\n'
+    + '・褒めどころは1〜2点にしぼる。あれもこれも全部褒めない\n'
+    + '・「スタッフの方」を連発しない。「担当してくれた人」など具体的に呼ぶか、主語を省く\n'
+    + '・' + kwLine + '\n'
+    + '・お客様が選んだ回答に、上のキーワード（この店が大切にしている言葉・売りにしている特徴）がそのまま入っている場合は、言い換えずにその言葉を活かして書いてよい（お店がGoogleクチコミに載せたいMEOワードのため）\n'
+    + '・地名・都市名・県名・駅名は、自由メッセージかお店のキーワードに実際に出てくるものだけ使う。それ以外の地名（札幌・東京・大阪など）は、出張・旅行などの設定であっても一切書かない\n'
+    + '・毎回同じ締め方（「ありがとうございました」で終わる等）や、同じ言い回し（「良い刺激」「新しい趣味ができた」など）にばかり頼らない。締めも言い回しも自然にばらけさせる\n'
+    + '・誤字や乱れた文にはしない。ただし、きれいに整いすぎた作文にもしない\n\n'
+    + '【絶対に使わない言い回し（AIっぽさの元凶）】\n'
+    + '・「〜してくださって」「〜させていただき」を何度も重ねる多重敬語\n'
+    + '・「また利用させていただきます」「また訪れたいと思います」のような丁寧すぎる再訪宣言\n'
+    + '・「癒しの空間」「特別なひととき」「心温まる」「アットホームな雰囲気」などの抽象的な情緒ワード\n'
+    + '・「料理も接客も雰囲気も全て最高」のような三点全部褒め\n'
+    + '・「初心者の私でも」「〜な私でも」の定型\n'
+    + '・「ぜひおすすめです」「気になる方はぜひ」の読者への呼びかけ\n'
+    + (bannedLine ? bannedLine + '\n\n' : '\n')
+    + '【お店の補足（業種と雰囲気を理解するためだけに読む。ここに書かれた店舗独自の仕組み・料金・設備・制度は、クチコミ本文にそのまま書かない）】\n'
+    + SALON_CONFIG.promptNote + '\n\n'
+    + 'クチコミ本文だけを出力（前置き・説明・タイトルは不要）。\n'
+    + '【出力前の最終チェック】本文に' + checkWords + '😊などのAI絵文字が入っていたら、必ず一般的な言い換え（例：ポイント制→「現金を使わないので安心」）や削除をしてから出す。';
 }
 // ===== 人間化エンジン ここまで =====
 
@@ -1149,13 +1957,10 @@ function resetAll() {
   state.staffImpressions = [];
   state.freeText = "";
   state.score = null;
-  state.mood = 'auto';
 
   // UI全リセット
   document.querySelectorAll('.checkbox-item').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.radio-btn').forEach(el => el.classList.remove('selected'));
-  const moodFirst = document.querySelector('#mood-group .radio-btn');
-  if (moodFirst) moodFirst.classList.add('selected');
   document.querySelectorAll('.score-btn').forEach(el => el.classList.remove('selected'));
   document.getElementById('free-text').value = '';
   document.getElementById('btn-step1-next').disabled = true;
